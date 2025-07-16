@@ -1,0 +1,16 @@
+spring:
+  main.banner-mode: OFF
+  jpa:
+    hibernate:
+      ddl-auto: update
+      format_sql: true
+      jdbc.time_zone: UTC
+  sql:
+    init:
+      mode: always
+
+  datasource:
+    driverClassName: "org.postgresql.Driver"
+    url: "jdbc:postgresql://localhost:6542/ewm-stats"
+    username: "stat"
+    password: "stat"

@@ -1,0 +1,23 @@
+spring:
+  main:
+    banner-mode: OFF
+  jpa:
+    hibernate:
+      ddl-auto: update
+      format_sql: true
+      jdbc:
+        time_zone: UTC
+  sql:
+    init:
+      mode: always
+  datasource:
+    driverClassName: "org.postgresql.Driver"
+    username: "service"
+    password: "service"
+    url: "jdbc:postgresql://localhost:6543/ewm-main"
+
+application:
+  date-time-format: yyyy-MM-dd HH:mm:ss
+
+discovery:
+  stats-server-name: stats-server
