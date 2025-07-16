@@ -59,7 +59,7 @@ public class EventsController {
     @Autowired
     public EventsController(EventsService eventsService,
                             StatClient statClient,
-                            @Value("${application.name}")
+                            @Value("${spring.application.name}")
                             String applicationName) {
         this.eventsService = eventsService;
         this.statClient = statClient;

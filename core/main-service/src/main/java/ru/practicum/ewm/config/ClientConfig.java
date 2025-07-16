@@ -10,6 +10,12 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.retry.policy.MaxAttemptsRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDateTime;
@@ -18,28 +24,6 @@ import java.time.format.DateTimeFormatter;
 @Configuration
 @RequiredArgsConstructor
 public class ClientConfig {
-    private final DiscoveryClient discoveryClient;
-
-    @Bean
-    public RestClient restClient(@Value("${discovery.stats-server-name}") String statsServerName) {
-        ServiceInstance statsServer;
-
-        try {
-            statsServer = discoveryClient
-                    .getInstances(statsServerName)
-                    .getFirst();
-        } catch (Exception exception) {
-            throw new RuntimeException(
-                    "Ошибка обнаружения адреса сервиса статистики с именем: " + statsServerName,
-                    exception
-            );
-        }
-
-        return RestClient.builder()
-                .baseUrl(String.format("%s://%s:%s", statsServer.getScheme(), statsServer.getHost(), statsServer.getPort()))
-                .build();
-    }
-
     @Bean
     public ObjectMapper objectMapper(@Value("${application.date-time-format}") String dateTimeFormat) {
         JavaTimeModule javaTimeModule = new JavaTimeModule();
