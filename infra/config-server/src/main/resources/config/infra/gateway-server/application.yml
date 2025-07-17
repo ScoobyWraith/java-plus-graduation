@@ -5,7 +5,13 @@ spring:
         enabled: true
 
       routes:
+        - id: stats-service
+          uri: lb://stats-service
+          predicates:
+            - Path=/hit/**
+            - Path=/stats/**
+
         - id: main-service
           uri: lb://main-service
           predicates:
-            - Path=*
+            - Path=/**
