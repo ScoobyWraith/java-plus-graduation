@@ -3,7 +3,7 @@ package ru.practicum.ewm.request.params;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import ru.practicum.ewm.error.exception.DataIntegrityViolationException;
+import ru.practicum.ewm.common.exception.DataIntegrityViolationException;
 import ru.practicum.ewm.events.enums.EventPublishState;
 import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.request.model.RequestStatus;
@@ -26,7 +26,7 @@ public class RequestValidator {
     }
 
     private void validateInitiator() {
-        if (event.getInitiator().getId().equals(userId)) {
+        if (event.getInitiatorId().equals(userId)) {
             throw new DataIntegrityViolationException("Initiator can not create requests");
         }
     }

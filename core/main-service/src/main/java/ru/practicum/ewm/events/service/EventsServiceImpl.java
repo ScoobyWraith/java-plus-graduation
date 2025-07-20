@@ -12,11 +12,15 @@ import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.category.storage.CategoryRepository;
 import ru.practicum.ewm.comments.dto.CommentShortDto;
 import ru.practicum.ewm.comments.mapper.CommentMapper;
+import ru.practicum.ewm.comments.model.Comment;
 import ru.practicum.ewm.comments.storage.CommentRepository;
-import ru.practicum.ewm.error.exception.ConflictException;
-import ru.practicum.ewm.error.exception.DataIntegrityViolationException;
-import ru.practicum.ewm.error.exception.NotFoundException;
-import ru.practicum.ewm.error.exception.ValidationException;
+import ru.practicum.ewm.common.dto.user.GetUserShortRequest;
+import ru.practicum.ewm.common.dto.user.UserShortDto;
+import ru.practicum.ewm.common.exception.ConflictException;
+import ru.practicum.ewm.common.exception.DataIntegrityViolationException;
+import ru.practicum.ewm.common.exception.NotFoundException;
+import ru.practicum.ewm.common.exception.ValidationException;
+import ru.practicum.ewm.common.interaction.UserClient;
 import ru.practicum.ewm.events.dto.EventFullDto;
 import ru.practicum.ewm.events.dto.EventFullDtoWithComments;
 import ru.practicum.ewm.events.dto.EventRequestStatusUpdateRequest;
@@ -48,9 +52,6 @@ import ru.practicum.ewm.request.mapper.RequestMapper;
 import ru.practicum.ewm.request.model.Request;
 import ru.practicum.ewm.request.model.RequestStatus;
 import ru.practicum.ewm.request.repository.RequestRepository;
-import ru.practicum.ewm.user.mapper.UserMapper;
-import ru.practicum.ewm.user.model.User;
-import ru.practicum.ewm.user.repository.UserRepository;
 import ru.practicum.ewm.util.Util;
 
 import java.time.LocalDateTime;
@@ -67,12 +68,13 @@ import java.util.stream.StreamSupport;
 @Transactional
 public class EventsServiceImpl implements EventsService {
     private final EventsRepository eventsRepository;
-    private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
     private final CommentRepository commentRepository;
 
     private final EventsViewsGetter eventsViewsGetter;
+
+    private final UserClient userClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -80,9 +82,6 @@ public class EventsServiceImpl implements EventsService {
         Long userId = eventsForUserParameters.getUserId();
         Integer from = eventsForUserParameters.getFrom();
         Integer size = eventsForUserParameters.getSize();
-
-        checkUserExisting(userId);
-
         Pageable page = createPageableObject(from, size);
         List<Event> userEvents = eventsRepository.findAllByInitiatorIdIs(userId, page).stream()
                 .toList();
@@ -93,11 +92,10 @@ public class EventsServiceImpl implements EventsService {
     @Override
     public EventFullDto createEvent(Long userId, NewEventDto newEventDto) {
         checkEventDateBeforeHours(newEventDto.getEventDate());
-        User user = getUserWithCheck(userId);
         Category category = getCategoryWithCheck(newEventDto.getCategory());
         Event event = EventMapper.fromNewEventDto(newEventDto, category);
         event.setCreatedOn(Util.getNowTruncatedToSeconds());
-        event.setInitiator(user);
+        event.setInitiatorId(userId);
         return createEventFullDto(eventsRepository.save(event));
     }
 
@@ -207,7 +205,7 @@ public class EventsServiceImpl implements EventsService {
         Pageable page = createPageableObject(searchParams.getFrom(), searchParams.getSize());
 
         if (searchParams.getUsers() != null) {
-            conditions.add(event.initiator.id.in(searchParams.getUsers()));
+            conditions.add(event.initiatorId.in(searchParams.getUsers()));
         }
 
         if (searchParams.getStates() != null) {
@@ -357,9 +355,17 @@ public class EventsServiceImpl implements EventsService {
     @Transactional(readOnly = true)
     public List<CommentShortDto> getAllEventComments(GetAllCommentsParameters parameters) {
         Event event = getEventWithCheck(parameters.getEventId());
-        return commentRepository.findPageableCommentsForEvent(event.getId(), parameters.getFrom(), parameters.getSize())
+        List<Comment> comments = commentRepository
+                .findPageableCommentsForEvent(event.getId(), parameters.getFrom(), parameters.getSize());
+        List<Long> authorsId = comments.stream()
+                .map(Comment::getAuthorId)
+                .toList();
+        Map<Long, UserShortDto> authorsShortMap = userClient
+                .getUsersShort(new GetUserShortRequest(authorsId));
+
+        return comments
                 .stream()
-                .map(CommentMapper::toCommentShortDto)
+                .map(comment -> CommentMapper.toCommentShortDto(comment, authorsShortMap.get(comment.getAuthorId()).getName()))
                 .toList();
     }
 
@@ -368,20 +374,9 @@ public class EventsServiceImpl implements EventsService {
                 .orElseThrow(() -> new ConflictException(String.format("Event id=%d not found.", eventId)));
     }
 
-    private User getUserWithCheck(long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new ConflictException(String.format("User id=%d not found.", userId)));
-    }
-
     private Category getCategoryWithCheck(long categoryId) {
         return categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ConflictException(String.format("Category id=%d not found.", categoryId)));
-    }
-
-    private void checkUserExisting(long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new ConflictException(String.format("User id=%d not found.", userId));
-        }
     }
 
     private void checkEventDateBeforeHours(LocalDateTime eventDateTime) {
@@ -393,7 +388,7 @@ public class EventsServiceImpl implements EventsService {
     }
 
     private void checkUserRights(long userId, Event event) {
-        if (!event.getInitiator().getId().equals(userId)) {
+        if (!event.getInitiatorId().equals(userId)) {
             throw new ConflictException(
                     String.format("Access deny for user id=%d with event id=%d.", userId, event.getId())
             );
@@ -471,11 +466,13 @@ public class EventsServiceImpl implements EventsService {
         long id = event.getId();
         Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(List.of(id));
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(List.of(id));
+        Map<Long, UserShortDto> userShortsMap = userClient
+                .getUsersShort(new GetUserShortRequest(List.of(event.getInitiatorId())));
 
         MappingEventParameters eventFullDtoParams = MappingEventParameters.builder()
                 .event(event)
                 .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
-                .initiator(UserMapper.toUserShortDto(event.getInitiator()))
+                .initiator(userShortsMap.get(event.getInitiatorId()))
                 .confirmedRequests(confirmedRequestsMap.get(id))
                 .views(eventsViewsMap.get(id))
                 .build();
@@ -486,26 +483,37 @@ public class EventsServiceImpl implements EventsService {
         long id = event.getId();
         Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(List.of(id));
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(List.of(id));
-        List<CommentShortDto> comments = commentRepository.findFirstCommentsForEvent(id, 5L).stream()
-                .map(CommentMapper::toCommentShortDto)
+        List<Comment> comments = commentRepository.findFirstCommentsForEvent(id, 5L);
+        List<Long> authorsId = comments.stream()
+                .map(Comment::getAuthorId)
                 .toList();
+        Map<Long, UserShortDto> authorsShortMap = userClient
+                .getUsersShort(new GetUserShortRequest(authorsId));
+
+        List<CommentShortDto> commentsShort = comments.stream()
+                .map(comment -> CommentMapper.toCommentShortDto(comment, authorsShortMap.get(comment.getAuthorId()).getName()))
+                .toList();
+        Map<Long, UserShortDto> userShortsMap = userClient
+                .getUsersShort(new GetUserShortRequest(List.of(event.getInitiatorId())));
 
         MappingEventParameters eventFullDtoParams = MappingEventParameters.builder()
                 .event(event)
                 .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
-                .initiator(UserMapper.toUserShortDto(event.getInitiator()))
+                .initiator(userShortsMap.get(event.getInitiatorId()))
                 .confirmedRequests(confirmedRequestsMap.get(id))
                 .views(eventsViewsMap.get(id))
-                .comments(comments)
+                .comments(commentsShort)
                 .build();
         return EventMapper.toEventEventFullDtoWithComments(eventFullDtoParams);
     }
 
     private EventFullDto createEventFullDto(Event event, long views, long confirmedRequests) {
+        Map<Long, UserShortDto> userShortsMap = userClient
+                .getUsersShort(new GetUserShortRequest(List.of(event.getInitiatorId())));
         MappingEventParameters eventFullDtoParams = MappingEventParameters.builder()
                 .event(event)
                 .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
-                .initiator(UserMapper.toUserShortDto(event.getInitiator()))
+                .initiator(userShortsMap.get(event.getInitiatorId()))
                 .confirmedRequests(confirmedRequests)
                 .views(views)
                 .build();
@@ -513,18 +521,25 @@ public class EventsServiceImpl implements EventsService {
     }
 
     private List<EventFullDto> createEventFullDtoList(List<Event> events) {
-        List<Long> ids = events.stream()
-                .map(Event::getId)
-                .toList();
+        List<Long> ids = new ArrayList<>();
+        List<Long> userIds = new ArrayList<>();
+
+        events.forEach(event -> {
+            ids.add(event.getId());
+            userIds.add(event.getInitiatorId());
+        });
+
         Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(ids);
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(ids);
+        Map<Long, UserShortDto> userShortsMap = userClient
+                .getUsersShort(new GetUserShortRequest(userIds));
 
         return events.stream()
                 .map(event -> {
                     MappingEventParameters eventFullDtoParams = MappingEventParameters.builder()
                             .event(event)
                             .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
-                            .initiator(UserMapper.toUserShortDto(event.getInitiator()))
+                            .initiator(userShortsMap.get(event.getInitiatorId()))
                             .confirmedRequests(confirmedRequestsMap.get(event.getId()))
                             .views(eventsViewsMap.get(event.getId()))
                             .build();
@@ -534,18 +549,25 @@ public class EventsServiceImpl implements EventsService {
     }
 
     private List<EventShortDto> createEventShortDtoList(List<Event> events) {
-        List<Long> ids = events.stream()
-                .map(Event::getId)
-                .toList();
+        List<Long> ids = new ArrayList<>();
+        List<Long> userIds = new ArrayList<>();
+
+        events.forEach(event -> {
+            ids.add(event.getId());
+            userIds.add(event.getInitiatorId());
+        });
+
         Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(ids);
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(ids);
+        Map<Long, UserShortDto> userShortsMap = userClient
+                .getUsersShort(new GetUserShortRequest(userIds));
 
         return events.stream()
                 .map(event -> {
                     MappingEventParameters mappingEventParameters = MappingEventParameters.builder()
                             .event(event)
                             .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
-                            .initiator(UserMapper.toUserShortDto(event.getInitiator()))
+                            .initiator(userShortsMap.get(event.getInitiatorId()))
                             .confirmedRequests(confirmedRequestsMap.get(event.getId()))
                             .views(eventsViewsMap.get(event.getId()))
                             .build();

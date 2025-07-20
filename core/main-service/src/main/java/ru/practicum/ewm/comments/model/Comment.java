@@ -20,7 +20,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import ru.practicum.ewm.events.model.Event;
-import ru.practicum.ewm.user.model.User;
 
 import java.time.LocalDateTime;
 
@@ -44,10 +43,8 @@ public class Comment {
     @Column(name = "created_on", nullable = false)
     LocalDateTime createdOn;
 
-    @ToString.Exclude
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "author_id")
-    User author;
+    @Column(name = "author_id", nullable = false)
+    Long authorId;
 
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.EAGER)

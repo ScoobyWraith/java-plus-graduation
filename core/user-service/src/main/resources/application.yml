@@ -13,6 +13,22 @@ spring:
         useRandomPolicy: true
         max-interval: 6000
 
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      format_sql: true
+      jdbc:
+        time_zone: UTC
+  sql:
+    init:
+      mode: always
+  datasource:
+    driverClassName: "org.postgresql.Driver"
+    username: "service"
+    password: "service"
+    url: "jdbc:postgresql://localhost:5432/ewm-userservice"
+
 eureka:
   client:
     serviceUrl:
@@ -25,3 +41,5 @@ eureka:
 
 server:
   port: 0
+
+

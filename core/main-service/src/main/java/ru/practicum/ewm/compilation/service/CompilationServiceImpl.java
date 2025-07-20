@@ -8,21 +8,23 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.category.mapper.CategoryMapper;
+import ru.practicum.ewm.common.dto.user.GetUserShortRequest;
+import ru.practicum.ewm.common.dto.user.UserShortDto;
+import ru.practicum.ewm.common.interaction.UserClient;
 import ru.practicum.ewm.compilation.dto.CompilationDto;
 import ru.practicum.ewm.compilation.dto.CompilationParams;
 import ru.practicum.ewm.compilation.dto.NewCompilationDto;
 import ru.practicum.ewm.compilation.mapper.CompilationMapper;
 import ru.practicum.ewm.compilation.model.Compilation;
 import ru.practicum.ewm.compilation.storage.CompilationRepository;
-import ru.practicum.ewm.error.exception.NotFoundException;
-import ru.practicum.ewm.error.exception.ValidationException;
+import ru.practicum.ewm.common.exception.NotFoundException;
+import ru.practicum.ewm.common.exception.ValidationException;
 import ru.practicum.ewm.events.dto.EventShortDto;
 import ru.practicum.ewm.events.dto.parameters.MappingEventParameters;
 import ru.practicum.ewm.events.mapper.EventMapper;
 import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.events.storage.EventsRepository;
 import ru.practicum.ewm.events.views.EventsViewsGetter;
-import ru.practicum.ewm.user.mapper.UserMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +39,8 @@ public class CompilationServiceImpl implements CompilationService {
     private final CompilationRepository compilationRepository;
     private final EventsRepository eventsRepository;
     private final EventsViewsGetter eventsViewsGetter;
+
+    private final UserClient userClient;
 
     @Override
     public List<CompilationDto> getCompilations(CompilationParams compilationParams) {
@@ -150,18 +154,25 @@ public class CompilationServiceImpl implements CompilationService {
             return new ArrayList<>();
         }
 
-        List<Long> eventIds = events.stream()
-                .map(Event::getId)
-                .toList();
+        List<Long> eventIds = new ArrayList<>();
+        List<Long> userIds = new ArrayList<>();
+
+        events.forEach(event -> {
+            eventIds.add(event.getId());
+            userIds.add(event.getInitiatorId());
+        });
+
         Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(eventIds);
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(eventIds);
+        Map<Long, UserShortDto> userShortsMap = userClient
+                .getUsersShort(new GetUserShortRequest(userIds));
 
         return events.stream()
                 .map(event -> {
                     MappingEventParameters mappingEventParameters = MappingEventParameters.builder()
                             .event(event)
                             .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
-                            .initiator(UserMapper.toUserShortDto(event.getInitiator()))
+                            .initiator(userShortsMap.get(event.getInitiatorId()))
                             .confirmedRequests(confirmedRequestsMap.getOrDefault(event.getId(), 0L))
                             .views(eventsViewsMap.getOrDefault(event.getId(), 0L))
                             .build();

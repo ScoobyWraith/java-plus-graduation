@@ -14,10 +14,10 @@ import ru.practicum.ewm.category.dto.NewCategoryDto;
 import ru.practicum.ewm.category.mapper.CategoryMapper;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.category.storage.CategoryRepository;
-import ru.practicum.ewm.error.exception.ConflictException;
-import ru.practicum.ewm.error.exception.IllegalArgumentException;
-import ru.practicum.ewm.error.exception.NotFoundException;
-import ru.practicum.ewm.error.exception.ValidationException;
+import ru.practicum.ewm.common.exception.ConflictException;
+import ru.practicum.ewm.common.exception.IllegalArgumentException;
+import ru.practicum.ewm.common.exception.NotFoundException;
+import ru.practicum.ewm.common.exception.ValidationException;
 import ru.practicum.ewm.events.storage.EventsRepository;
 
 import java.util.Collections;

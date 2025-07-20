@@ -11,12 +11,12 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.practicum.ewm.error.exception.AccessException;
-import ru.practicum.ewm.error.exception.ConflictException;
-import ru.practicum.ewm.error.exception.DataIntegrityViolationException;
-import ru.practicum.ewm.error.exception.IllegalArgumentException;
-import ru.practicum.ewm.error.exception.NotFoundException;
-import ru.practicum.ewm.error.exception.ValidationException;
+import ru.practicum.ewm.common.exception.AccessException;
+import ru.practicum.ewm.common.exception.ConflictException;
+import ru.practicum.ewm.common.exception.DataIntegrityViolationException;
+import ru.practicum.ewm.common.exception.IllegalArgumentException;
+import ru.practicum.ewm.common.exception.NotFoundException;
+import ru.practicum.ewm.common.exception.ValidationException;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

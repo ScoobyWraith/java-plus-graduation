@@ -22,7 +22,6 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.events.enums.EventPublishState;
-import ru.practicum.ewm.user.model.User;
 
 import java.time.LocalDateTime;
 
@@ -77,10 +76,8 @@ public class Event {
     @Column(name = "created_on", nullable = false)
     LocalDateTime createdOn;
 
-    @ToString.Exclude
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "initiator_id")
-    User initiator;
+    @Column(name = "initiator_id", nullable = false)
+    Long initiatorId;
 
     @Column(name = "published_on")
     LocalDateTime publishedOn;

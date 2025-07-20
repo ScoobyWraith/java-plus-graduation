@@ -5,10 +5,7 @@ import ru.practicum.ewm.comments.dto.CommentShortDto;
 import ru.practicum.ewm.comments.dto.NewCommentDto;
 import ru.practicum.ewm.comments.model.Comment;
 
-
 public class CommentMapper {
-
-
     public static Comment fromNewCommentDto(NewCommentDto newCommentDto) {
         return Comment.builder()
                 .text(newCommentDto.getText())
@@ -19,18 +16,18 @@ public class CommentMapper {
         return CommentDto.builder()
                 .id(comment.getId())
                 .eventId(comment.getEvent().getId())
-                .authorId(comment.getAuthor().getId())
+                .authorId(comment.getAuthorId())
                 .text(comment.getText())
                 .status(comment.getStatus())
                 .createdOn(comment.getCreatedOn())
                 .build();
     }
 
-    public static CommentShortDto toCommentShortDto(Comment comment) {
+    public static CommentShortDto toCommentShortDto(Comment comment, String author) {
         return CommentShortDto.builder()
                 .id(comment.getId())
                 .text(comment.getText())
-                .author(comment.getAuthor().getName())
+                .author(author)
                 .build();
     }
 }
