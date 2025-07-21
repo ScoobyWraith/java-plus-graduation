@@ -1,4 +1,4 @@
-package ru.practicum.ewm.events.dto;
+package ru.practicum.ewm.common.dto.event;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

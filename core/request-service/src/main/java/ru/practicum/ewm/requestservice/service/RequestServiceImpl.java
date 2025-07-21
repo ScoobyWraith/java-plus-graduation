@@ -1,16 +1,17 @@
-package ru.practicum.ewm.request.service;
+package ru.practicum.ewm.requestservice.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.practicum.ewm.common.dto.event.EventFullDto;
+import ru.practicum.ewm.common.dto.request.RequestShortDto;
 import ru.practicum.ewm.common.exception.NotFoundException;
-import ru.practicum.ewm.events.model.Event;
-import ru.practicum.ewm.events.storage.EventsRepository;
-import ru.practicum.ewm.request.dto.ParticipationRequestDto;
-import ru.practicum.ewm.request.mapper.RequestMapper;
-import ru.practicum.ewm.request.model.Request;
+import ru.practicum.ewm.common.interaction.EventClient;
+import ru.practicum.ewm.requestservice.dto.ParticipationRequestDto;
+import ru.practicum.ewm.requestservice.mapper.RequestMapper;
+import ru.practicum.ewm.requestservice.model.Request;
 import ru.practicum.ewm.common.dto.request.RequestStatus;
-import ru.practicum.ewm.request.params.RequestValidator;
-import ru.practicum.ewm.request.repository.RequestRepository;
+import ru.practicum.ewm.requestservice.params.RequestValidator;
+import ru.practicum.ewm.requestservice.repository.RequestRepository;
 import ru.practicum.ewm.common.util.Util;
 
 import java.util.List;
@@ -20,7 +21,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RequestServiceImpl implements RequestService {
     private final RequestRepository requestRepository;
-    private final EventsRepository eventsRepository;
+
+    private final EventClient eventClient;
 
     @Override
     public List<ParticipationRequestDto> getUserRequests(Long userId) {
@@ -32,8 +34,7 @@ public class RequestServiceImpl implements RequestService {
     @Override
     public ParticipationRequestDto createUserRequest(Long userId, Long eventId) {
 
-        Event event = eventsRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format("Event not found with id %d", eventId)));
+        EventFullDto event = eventClient.getFullEventDtoById(eventId);
 
         RequestStatus status = event.getParticipantLimit() == 0 || !event.getRequestModeration()
                 ? RequestStatus.CONFIRMED
@@ -44,7 +45,7 @@ public class RequestServiceImpl implements RequestService {
 
         Request newRequest = Request.builder()
                 .created(Util.getNowTruncatedToSeconds())
-                .event(event)
+                .eventId(eventId)
                 .requesterId(userId)
                 .status(status)
                 .build();
@@ -58,5 +59,10 @@ public class RequestServiceImpl implements RequestService {
 
         request.setStatus(RequestStatus.CANCELED);
         return RequestMapper.toRequestDto(requestRepository.save(request));
+    }
+
+    @Override
+    public RequestShortDto findByRequesterIdAndEventId(Long userId, Long eventId) {
+        return null;
     }
 }

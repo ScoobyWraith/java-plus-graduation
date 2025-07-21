@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
+import ru.practicum.ewm.common.dto.event.LocationDto;
 
 import java.time.LocalDateTime;
 

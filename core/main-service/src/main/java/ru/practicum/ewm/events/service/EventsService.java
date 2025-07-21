@@ -1,7 +1,7 @@
 package ru.practicum.ewm.events.service;
 
 import ru.practicum.ewm.common.dto.comment.CommentShortDto;
-import ru.practicum.ewm.events.dto.EventFullDto;
+import ru.practicum.ewm.common.dto.event.EventFullDto;
 import ru.practicum.ewm.events.dto.EventFullDtoWithComments;
 import ru.practicum.ewm.events.dto.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.events.dto.EventShortDto;

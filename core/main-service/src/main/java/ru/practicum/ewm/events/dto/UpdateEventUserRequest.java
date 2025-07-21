@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import ru.practicum.ewm.common.dto.event.LocationDto;
 import ru.practicum.ewm.events.enums.UserEventAction;
 
 import java.time.LocalDateTime;

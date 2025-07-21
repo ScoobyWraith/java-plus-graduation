@@ -1,4 +1,4 @@
-package ru.practicum.ewm.request.model;
+package ru.practicum.ewm.requestservice.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,7 +17,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import ru.practicum.ewm.common.dto.request.RequestStatus;
-import ru.practicum.ewm.events.model.Event;
 
 import java.time.LocalDateTime;
 
@@ -37,9 +36,8 @@ public class Request {
     @Column(name = "created", nullable = false)
     LocalDateTime created;
 
-    @ManyToOne
     @JoinColumn(name = "event_id", nullable = false)
-    Event event;
+    Long eventId;
 
     @Column(name = "requester_id", nullable = false)
     Long requesterId;

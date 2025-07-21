@@ -1,4 +1,4 @@
-package ru.practicum.ewm.request.constants;
+package ru.practicum.ewm.requestservice.constants;
 
 public interface RequestConstants {
     public static final String USERS = "/users";

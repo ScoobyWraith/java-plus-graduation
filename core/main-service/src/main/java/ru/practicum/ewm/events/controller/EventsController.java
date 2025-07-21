@@ -19,7 +19,7 @@ import ru.practicum.dto.StatHitDto;
 import ru.practicum.ewm.client.StatClient;
 import ru.practicum.ewm.common.dto.comment.CommentShortDto;
 import ru.practicum.ewm.events.constants.EventsConstants;
-import ru.practicum.ewm.events.dto.EventFullDto;
+import ru.practicum.ewm.common.dto.event.EventFullDto;
 import ru.practicum.ewm.events.dto.EventFullDtoWithComments;
 import ru.practicum.ewm.events.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.events.dto.EventRequestStatusUpdateResult;

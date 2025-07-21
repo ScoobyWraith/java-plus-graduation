@@ -1,4 +1,4 @@
-package ru.practicum.ewm.request.controller;
+package ru.practicum.ewm.requestservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,22 +11,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.ewm.request.dto.ParticipationRequestDto;
-import ru.practicum.ewm.request.service.RequestService;
+import ru.practicum.ewm.common.dto.request.RequestShortDto;
+import ru.practicum.ewm.common.interaction.RequestClient;
+import ru.practicum.ewm.requestservice.dto.ParticipationRequestDto;
+import ru.practicum.ewm.requestservice.service.RequestService;
 
 import java.util.List;
 
-import static ru.practicum.ewm.request.constants.RequestConstants.REQUEST_BASE_PATCH_PATH;
-import static ru.practicum.ewm.request.constants.RequestConstants.REQUEST_BASE_PATH;
-import static ru.practicum.ewm.request.constants.RequestConstants.REQUEST_ID;
-import static ru.practicum.ewm.request.constants.RequestConstants.USERS;
-import static ru.practicum.ewm.request.constants.RequestConstants.USER_ID;
+import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUEST_BASE_PATCH_PATH;
+import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUEST_BASE_PATH;
+import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUEST_ID;
+import static ru.practicum.ewm.requestservice.constants.RequestConstants.USERS;
+import static ru.practicum.ewm.requestservice.constants.RequestConstants.USER_ID;
 
 @Slf4j
 @RestController
 @RequestMapping(USERS)
 @RequiredArgsConstructor
-public final class RequestController {
+public final class RequestController implements RequestClient {
 
     private final RequestService requestService;
 
@@ -50,5 +52,10 @@ public final class RequestController {
         log.info("Cancelling request with ID: {} for user with ID: {}", requestId, userId);
         return requestService.cancelUserRequest(userId, requestId);
 
+    }
+
+    @Override
+    public RequestShortDto findByRequesterIdAndEventId(Long userId, Long eventId) {
+        return requestService.findByRequesterIdAndEventId(userId, eventId);
     }
 }

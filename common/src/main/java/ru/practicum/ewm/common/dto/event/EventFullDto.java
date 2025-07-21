@@ -1,4 +1,4 @@
-package ru.practicum.ewm.events.dto;
+package ru.practicum.ewm.common.dto.event;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import ru.practicum.ewm.category.dto.CategoryDto;
-import ru.practicum.ewm.events.enums.EventPublishState;
 import ru.practicum.ewm.common.dto.user.UserShortDto;
 
 import java.time.LocalDateTime;

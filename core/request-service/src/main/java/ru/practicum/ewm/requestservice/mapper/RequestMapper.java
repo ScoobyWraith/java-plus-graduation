@@ -1,8 +1,8 @@
-package ru.practicum.ewm.request.mapper;
+package ru.practicum.ewm.requestservice.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.practicum.ewm.request.dto.ParticipationRequestDto;
-import ru.practicum.ewm.request.model.Request;
+import ru.practicum.ewm.requestservice.dto.ParticipationRequestDto;
+import ru.practicum.ewm.requestservice.model.Request;
 
 @Component
 public class RequestMapper {
@@ -12,7 +12,7 @@ public class RequestMapper {
         return ParticipationRequestDto.builder()
                 .id(request.getId())
                 .created(request.getCreated().toString())
-                .event(request.getEvent().getId())
+                .event(request.getEventId())
                 .requester(request.getRequesterId())
                 .status(request.getStatus().name())
                 .build();
