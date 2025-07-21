@@ -1,12 +1,8 @@
 package ru.practicum.ewm.request.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.request.dto.ParticipationRequestDto;
 import ru.practicum.ewm.request.model.Request;
-import ru.practicum.ewm.request.model.RequestStatus;
-
-import java.time.LocalDateTime;
 
 @Component
 public class RequestMapper {

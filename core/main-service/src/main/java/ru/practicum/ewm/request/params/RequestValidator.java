@@ -6,7 +6,7 @@ import lombok.experimental.FieldDefaults;
 import ru.practicum.ewm.common.exception.DataIntegrityViolationException;
 import ru.practicum.ewm.events.enums.EventPublishState;
 import ru.practicum.ewm.events.model.Event;
-import ru.practicum.ewm.request.model.RequestStatus;
+import ru.practicum.ewm.common.dto.request.RequestStatus;
 import ru.practicum.ewm.request.repository.RequestRepository;
 
 @AllArgsConstructor

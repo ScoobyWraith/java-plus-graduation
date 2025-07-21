@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import ru.practicum.ewm.category.dto.CategoryDto;
-import ru.practicum.ewm.comments.dto.CommentShortDto;
+import ru.practicum.ewm.common.dto.comment.CommentShortDto;
 import ru.practicum.ewm.events.enums.EventPublishState;
 import ru.practicum.ewm.common.dto.user.UserShortDto;
 

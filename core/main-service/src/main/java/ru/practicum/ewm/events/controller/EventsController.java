@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.dto.StatHitDto;
 import ru.practicum.ewm.client.StatClient;
-import ru.practicum.ewm.comments.dto.CommentShortDto;
+import ru.practicum.ewm.common.dto.comment.CommentShortDto;
 import ru.practicum.ewm.events.constants.EventsConstants;
 import ru.practicum.ewm.events.dto.EventFullDto;
 import ru.practicum.ewm.events.dto.EventFullDtoWithComments;
@@ -36,7 +36,7 @@ import ru.practicum.ewm.events.dto.parameters.UpdateRequestsStatusParameters;
 import ru.practicum.ewm.events.enums.SortingEvents;
 import ru.practicum.ewm.events.service.EventsService;
 import ru.practicum.ewm.request.dto.ParticipationRequestDto;
-import ru.practicum.ewm.util.Util;
+import ru.practicum.ewm.common.util.Util;
 
 import java.time.LocalDateTime;
 import java.util.List;

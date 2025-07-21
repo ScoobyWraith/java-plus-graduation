@@ -10,16 +10,14 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.category.mapper.CategoryMapper;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.category.storage.CategoryRepository;
-import ru.practicum.ewm.comments.dto.CommentShortDto;
-import ru.practicum.ewm.comments.mapper.CommentMapper;
-import ru.practicum.ewm.comments.model.Comment;
-import ru.practicum.ewm.comments.storage.CommentRepository;
+import ru.practicum.ewm.common.dto.comment.CommentShortDto;
 import ru.practicum.ewm.common.dto.user.GetUserShortRequest;
 import ru.practicum.ewm.common.dto.user.UserShortDto;
 import ru.practicum.ewm.common.exception.ConflictException;
 import ru.practicum.ewm.common.exception.DataIntegrityViolationException;
 import ru.practicum.ewm.common.exception.NotFoundException;
 import ru.practicum.ewm.common.exception.ValidationException;
+import ru.practicum.ewm.common.interaction.CommentClient;
 import ru.practicum.ewm.common.interaction.UserClient;
 import ru.practicum.ewm.events.dto.EventFullDto;
 import ru.practicum.ewm.events.dto.EventFullDtoWithComments;
@@ -50,9 +48,9 @@ import ru.practicum.ewm.events.views.EventsViewsGetter;
 import ru.practicum.ewm.request.dto.ParticipationRequestDto;
 import ru.practicum.ewm.request.mapper.RequestMapper;
 import ru.practicum.ewm.request.model.Request;
-import ru.practicum.ewm.request.model.RequestStatus;
+import ru.practicum.ewm.common.dto.request.RequestStatus;
 import ru.practicum.ewm.request.repository.RequestRepository;
-import ru.practicum.ewm.util.Util;
+import ru.practicum.ewm.common.util.Util;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -70,7 +68,8 @@ public class EventsServiceImpl implements EventsService {
     private final EventsRepository eventsRepository;
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
-    private final CommentRepository commentRepository;
+
+    private final CommentClient commentClient;
 
     private final EventsViewsGetter eventsViewsGetter;
 
@@ -355,18 +354,7 @@ public class EventsServiceImpl implements EventsService {
     @Transactional(readOnly = true)
     public List<CommentShortDto> getAllEventComments(GetAllCommentsParameters parameters) {
         Event event = getEventWithCheck(parameters.getEventId());
-        List<Comment> comments = commentRepository
-                .findPageableCommentsForEvent(event.getId(), parameters.getFrom(), parameters.getSize());
-        List<Long> authorsId = comments.stream()
-                .map(Comment::getAuthorId)
-                .toList();
-        Map<Long, UserShortDto> authorsShortMap = userClient
-                .getUsersShort(new GetUserShortRequest(authorsId));
-
-        return comments
-                .stream()
-                .map(comment -> CommentMapper.toCommentShortDto(comment, authorsShortMap.get(comment.getAuthorId()).getName()))
-                .toList();
+        return commentClient.findPageableCommentsForEvent(event.getId(), parameters.getFrom(), parameters.getSize());
     }
 
     private Event getEventWithCheck(long eventId) {
@@ -455,11 +443,7 @@ public class EventsServiceImpl implements EventsService {
     }
 
     private Map<Long, Long> getCommentsNumberMap(List<Long> eventIds) {
-        Map<Long, Long> commentsNumberMap = commentRepository.getCommentsNumberForEvents(eventIds).stream()
-                .collect(Collectors.toMap(List::getFirst, List::getLast));
-
-        return eventIds.stream()
-                .collect(Collectors.toMap(Function.identity(), id -> commentsNumberMap.getOrDefault(id, 0L)));
+        return commentClient.getCommentsNumberForEvents(eventIds);
     }
 
     private EventFullDto createEventFullDto(Event event) {
@@ -483,16 +467,7 @@ public class EventsServiceImpl implements EventsService {
         long id = event.getId();
         Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(List.of(id));
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(List.of(id));
-        List<Comment> comments = commentRepository.findFirstCommentsForEvent(id, 5L);
-        List<Long> authorsId = comments.stream()
-                .map(Comment::getAuthorId)
-                .toList();
-        Map<Long, UserShortDto> authorsShortMap = userClient
-                .getUsersShort(new GetUserShortRequest(authorsId));
-
-        List<CommentShortDto> commentsShort = comments.stream()
-                .map(comment -> CommentMapper.toCommentShortDto(comment, authorsShortMap.get(comment.getAuthorId()).getName()))
-                .toList();
+        List<CommentShortDto> commentsShort = commentClient.findFirstCommentsForEvent(id, 5L);
         Map<Long, UserShortDto> userShortsMap = userClient
                 .getUsersShort(new GetUserShortRequest(List.of(event.getInitiatorId())));
 

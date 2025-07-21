@@ -1,50 +1,55 @@
-package ru.practicum.ewm.request.model;
+package ru.practicum.ewm.commentservice.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.FieldDefaults;
-import ru.practicum.ewm.common.dto.request.RequestStatus;
-import ru.practicum.ewm.events.model.Event;
 
 import java.time.LocalDateTime;
 
 @Data
+@Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "comments")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity
-@Table(name = "requests")
-public class Request {
-
+public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     Long id;
 
-    @Column(name = "created", nullable = false)
-    LocalDateTime created;
+    @Column(name = "text", nullable = false)
+    @Size(min = 5, max = 255)
+    String text;
 
-    @ManyToOne
+    @Column(name = "created_on", nullable = false)
+    LocalDateTime createdOn;
+
+    @Column(name = "author_id", nullable = false)
+    Long authorId;
+
     @JoinColumn(name = "event_id", nullable = false)
-    Event event;
-
-    @Column(name = "requester_id", nullable = false)
-    Long requesterId;
+    Long eventId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    RequestStatus status;
+    @Column(name = "status")
+    @Builder.Default
+    CommentStatus status = CommentStatus.PENDING;
 }

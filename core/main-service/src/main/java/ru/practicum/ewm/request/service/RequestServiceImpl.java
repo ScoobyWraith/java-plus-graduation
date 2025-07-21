@@ -8,10 +8,10 @@ import ru.practicum.ewm.events.storage.EventsRepository;
 import ru.practicum.ewm.request.dto.ParticipationRequestDto;
 import ru.practicum.ewm.request.mapper.RequestMapper;
 import ru.practicum.ewm.request.model.Request;
-import ru.practicum.ewm.request.model.RequestStatus;
+import ru.practicum.ewm.common.dto.request.RequestStatus;
 import ru.practicum.ewm.request.params.RequestValidator;
 import ru.practicum.ewm.request.repository.RequestRepository;
-import ru.practicum.ewm.util.Util;
+import ru.practicum.ewm.common.util.Util;
 
 import java.util.List;
 import java.util.stream.Collectors;
