@@ -7,13 +7,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.common.dto.request.RequestShortDto;
+import ru.practicum.ewm.common.dto.request.UpdateRequestsStatusParameters;
 import ru.practicum.ewm.common.interaction.RequestClient;
-import ru.practicum.ewm.requestservice.dto.ParticipationRequestDto;
+import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
 import ru.practicum.ewm.requestservice.service.RequestService;
 
 import java.util.List;
@@ -23,6 +26,7 @@ import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUEST
 import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUEST_ID;
 import static ru.practicum.ewm.requestservice.constants.RequestConstants.USERS;
 import static ru.practicum.ewm.requestservice.constants.RequestConstants.USER_ID;
+import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUESTS;
 
 @Slf4j
 @RestController
@@ -55,7 +59,20 @@ public final class RequestController implements RequestClient {
     }
 
     @Override
-    public RequestShortDto findByRequesterIdAndEventId(Long userId, Long eventId) {
+    @GetMapping(REQUESTS)
+    public RequestShortDto findByRequesterIdAndEventId(@RequestParam Long userId, @RequestParam Long eventId) {
         return requestService.findByRequesterIdAndEventId(userId, eventId);
+    }
+
+    @Override
+    @GetMapping(REQUESTS)
+    public List<ParticipationRequestDto> getRequestsForEvent(@RequestParam long eventId) {
+        return requestService.getRequestsForEvent(eventId);
+    }
+
+    @Override
+    @PostMapping(REQUESTS)
+    public EventRequestStatusUpdateResult updateRequestsForEvent(@RequestBody UpdateRequestsStatusParameters updateParams) {
+        return requestService.updateRequestsForEvent(updateParams);
     }
 }

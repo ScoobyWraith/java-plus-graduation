@@ -18,11 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.dto.StatHitDto;
 import ru.practicum.ewm.client.StatClient;
 import ru.practicum.ewm.common.dto.comment.CommentShortDto;
+import ru.practicum.ewm.common.interaction.EventClient;
 import ru.practicum.ewm.events.constants.EventsConstants;
 import ru.practicum.ewm.common.dto.event.EventFullDto;
 import ru.practicum.ewm.events.dto.EventFullDtoWithComments;
-import ru.practicum.ewm.events.dto.EventRequestStatusUpdateRequest;
-import ru.practicum.ewm.events.dto.EventRequestStatusUpdateResult;
+import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateRequest;
+import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.events.dto.EventShortDto;
 import ru.practicum.ewm.events.dto.NewEventDto;
 import ru.practicum.ewm.events.dto.UpdateEventAdminRequest;
@@ -32,14 +33,15 @@ import ru.practicum.ewm.events.dto.parameters.GetAllCommentsParameters;
 import ru.practicum.ewm.events.dto.parameters.SearchEventsParameters;
 import ru.practicum.ewm.events.dto.parameters.SearchPublicEventsParameters;
 import ru.practicum.ewm.events.dto.parameters.UpdateEventParameters;
-import ru.practicum.ewm.events.dto.parameters.UpdateRequestsStatusParameters;
+import ru.practicum.ewm.common.dto.request.UpdateRequestsStatusParameters;
 import ru.practicum.ewm.events.enums.SortingEvents;
 import ru.practicum.ewm.events.service.EventsService;
-import ru.practicum.ewm.request.dto.ParticipationRequestDto;
+import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
 import ru.practicum.ewm.common.util.Util;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static ru.practicum.ewm.events.constants.EventsConstants.EVENT_ID;
 import static ru.practicum.ewm.events.constants.EventsConstants.EVENT_ID_PATH;
@@ -51,7 +53,7 @@ import static ru.practicum.ewm.events.constants.EventsConstants.USER_ID;
 
 @RestController
 @Slf4j
-public class EventsController {
+public class EventsController implements EventClient {
     private final EventsService eventsService;
     private final StatClient statClient;
     private final String applicationName;
@@ -234,6 +236,20 @@ public class EventsController {
         return eventsService.getAllEventComments(parameters);
     }
     // endregion
+
+    @Override
+    @GetMapping(EventsConstants.PUBLIC_API_PREFIX)
+    @ResponseStatus(HttpStatus.OK)
+    public EventFullDto getFullEventDtoById(@RequestParam long eventId) {
+        return eventsService.getFullEventDtoById(eventId);
+    }
+
+    @Override
+    @GetMapping(EventsConstants.PUBLIC_API_PREFIX)
+    @ResponseStatus(HttpStatus.OK)
+    public Map<Long, Long> getConfirmedRequestsMap(List<Long> eventIds) {
+        return eventsService.getConfirmedRequestsMap(eventIds);
+    }
 
     private void hitStat(HttpServletRequest request) {
         StatHitDto statHitDto = StatHitDto.builder()

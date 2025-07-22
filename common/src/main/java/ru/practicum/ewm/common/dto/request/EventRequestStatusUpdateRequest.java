@@ -1,4 +1,4 @@
-package ru.practicum.ewm.events.dto;
+package ru.practicum.ewm.common.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -8,8 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import ru.practicum.ewm.events.enums.UserUpdateRequestAction;
-
 import java.util.List;
 
 @Data

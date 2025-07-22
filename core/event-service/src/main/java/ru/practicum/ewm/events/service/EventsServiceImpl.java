@@ -18,11 +18,12 @@ import ru.practicum.ewm.common.exception.DataIntegrityViolationException;
 import ru.practicum.ewm.common.exception.NotFoundException;
 import ru.practicum.ewm.common.exception.ValidationException;
 import ru.practicum.ewm.common.interaction.CommentClient;
+import ru.practicum.ewm.common.interaction.RequestClient;
 import ru.practicum.ewm.common.interaction.UserClient;
 import ru.practicum.ewm.common.dto.event.EventFullDto;
 import ru.practicum.ewm.events.dto.EventFullDtoWithComments;
-import ru.practicum.ewm.events.dto.EventRequestStatusUpdateRequest;
-import ru.practicum.ewm.events.dto.EventRequestStatusUpdateResult;
+import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateRequest;
+import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.events.dto.EventShortDto;
 import ru.practicum.ewm.common.dto.event.LocationDto;
 import ru.practicum.ewm.events.dto.NewEventDto;
@@ -35,21 +36,20 @@ import ru.practicum.ewm.events.dto.parameters.MappingEventParameters;
 import ru.practicum.ewm.events.dto.parameters.SearchEventsParameters;
 import ru.practicum.ewm.events.dto.parameters.SearchPublicEventsParameters;
 import ru.practicum.ewm.events.dto.parameters.UpdateEventParameters;
-import ru.practicum.ewm.events.dto.parameters.UpdateRequestsStatusParameters;
+import ru.practicum.ewm.common.dto.request.UpdateRequestsStatusParameters;
 import ru.practicum.ewm.events.enums.AdminEventAction;
 import ru.practicum.ewm.common.dto.event.EventPublishState;
 import ru.practicum.ewm.events.enums.SortingEvents;
-import ru.practicum.ewm.events.enums.UserUpdateRequestAction;
+import ru.practicum.ewm.common.dto.request.UserUpdateRequestAction;
 import ru.practicum.ewm.events.mapper.EventMapper;
 import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.events.model.QEvent;
 import ru.practicum.ewm.events.storage.EventsRepository;
 import ru.practicum.ewm.events.views.EventsViewsGetter;
-import ru.practicum.ewm.request.dto.ParticipationRequestDto;
-import ru.practicum.ewm.request.mapper.RequestMapper;
-import ru.practicum.ewm.request.model.Request;
+import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
+
+
 import ru.practicum.ewm.common.dto.request.RequestStatus;
-import ru.practicum.ewm.request.repository.RequestRepository;
 import ru.practicum.ewm.common.util.Util;
 
 import java.time.LocalDateTime;
@@ -66,13 +66,12 @@ import java.util.stream.StreamSupport;
 public class EventsServiceImpl implements EventsService {
     private final EventsRepository eventsRepository;
     private final CategoryRepository categoryRepository;
-    private final RequestRepository requestRepository;
-
-    private final CommentClient commentClient;
 
     private final EventsViewsGetter eventsViewsGetter;
 
+    private final CommentClient commentClient;
     private final UserClient userClient;
+    private final RequestClient requestClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -136,63 +135,16 @@ public class EventsServiceImpl implements EventsService {
     public List<ParticipationRequestDto> getRequestsForEvent(Long userId, Long eventId) {
         Event event = getEventWithCheck(eventId);
         checkUserRights(userId, event);
-        List<Request> requests = requestRepository.findByEventId(eventId);
-        return requests.stream()
-                .map(RequestMapper::toRequestDto)
-                .toList();
+        return requestClient.getRequestsForEvent(eventId);
     }
 
     @Override
     public EventRequestStatusUpdateResult updateRequestsForEvent(UpdateRequestsStatusParameters updateParams) {
         Long userId = updateParams.getUserId();
         Long eventId = updateParams.getEventId();
-        EventRequestStatusUpdateRequest statusUpdateRequest = updateParams.getEventRequestStatusUpdateRequest();
-
         Event event = getEventWithCheck(eventId);
         checkUserRights(userId, event);
-
-        EventRequestStatusUpdateResult result = EventRequestStatusUpdateResult.builder()
-                .confirmedRequests(new ArrayList<>())
-                .rejectedRequests(new ArrayList<>())
-                .build();
-
-        UserUpdateRequestAction action = statusUpdateRequest.getStatus();
-        List<Request> requests = requestRepository.findAllById(statusUpdateRequest.getRequestIds());
-        Long confirmedRequests = getConfirmedRequestsMap(List.of(eventId)).get(eventId);
-        Integer participantLimit = event.getParticipantLimit();
-
-        long canConfirmRequestsNumber = participantLimit == 0
-                ? requests.size()
-                : participantLimit - confirmedRequests;
-
-        if (canConfirmRequestsNumber <= 0) {
-            throw new DataIntegrityViolationException(String.format(
-                    "Event id=%d is full filled for requests.", eventId
-            ));
-        }
-
-        requests.forEach(request -> {
-            if (request.getStatus() != RequestStatus.PENDING) {
-                throw new DataIntegrityViolationException(String.format(
-                        "Request id=%d must have status PENDING.", request.getId()
-                ));
-            }
-        });
-
-        for (Request request : requests) {
-            if (action == UserUpdateRequestAction.REJECTED || canConfirmRequestsNumber <= 0) {
-                request.setStatus(RequestStatus.REJECTED);
-                result.getRejectedRequests().add(RequestMapper.toRequestDto(request));
-                continue;
-            }
-
-            request.setStatus(RequestStatus.CONFIRMED);
-            result.getConfirmedRequests().add(RequestMapper.toRequestDto(request));
-            canConfirmRequestsNumber--;
-        }
-
-        requestRepository.saveAll(requests);
-        return result;
+        return requestClient.updateRequestsForEvent(updateParams);
     }
 
     @Override
@@ -356,6 +308,12 @@ public class EventsServiceImpl implements EventsService {
         return commentClient.findPageableCommentsForEvent(event.getId(), parameters.getFrom(), parameters.getSize());
     }
 
+    @Override
+    public EventFullDto getFullEventDtoById(long eventId) {
+        Event event = getEventWithCheck(eventId);
+        return createEventFullDto(event);
+    }
+
     private Event getEventWithCheck(long eventId) {
         return eventsRepository.findById(eventId)
                 .orElseThrow(() -> new ConflictException(String.format("Event id=%d not found.", eventId)));
@@ -436,7 +394,8 @@ public class EventsServiceImpl implements EventsService {
         }
     }
 
-    private Map<Long, Long> getConfirmedRequestsMap(List<Long> eventIds) {
+    @Override
+    public Map<Long, Long> getConfirmedRequestsMap(List<Long> eventIds) {
         return eventsRepository.getConfirmedRequestsForEvents(eventIds).stream()
                 .collect(Collectors.toMap(List::getFirst, List::getLast));
     }

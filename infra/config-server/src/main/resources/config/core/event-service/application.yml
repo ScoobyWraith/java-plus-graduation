@@ -14,7 +14,7 @@ spring:
     driverClassName: "org.postgresql.Driver"
     username: "service"
     password: "service"
-    url: "jdbc:postgresql://localhost:5432/ewm-main"
+    url: "jdbc:postgresql://localhost:5432/ewm-eventservice"
 
 application:
   date-time-format: yyyy-MM-dd HH:mm:ss

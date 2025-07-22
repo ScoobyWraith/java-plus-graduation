@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.ewm.commentservice.dto.CommentDto;
@@ -106,17 +107,25 @@ public class CommentController implements CommentClient {
     }
 
     @Override
-    public List<CommentShortDto> findPageableCommentsForEvent(long eventId, int from, int size) {
+    @GetMapping(ADMIN_API_PREFIX)
+    @ResponseStatus(HttpStatus.OK)
+    public List<CommentShortDto> findPageableCommentsForEvent(@RequestParam long eventId,
+                                                              @RequestParam int from,
+                                                              @RequestParam int size) {
         return commentService.findPageableCommentsForEvent(eventId, from, size);
     }
 
     @Override
-    public List<CommentShortDto> findFirstCommentsForEvent(long eventId, long size) {
+    @GetMapping(ADMIN_API_PREFIX)
+    @ResponseStatus(HttpStatus.OK)
+    public List<CommentShortDto> findFirstCommentsForEvent(@RequestParam long eventId, @RequestParam long size) {
         return commentService.findFirstCommentsForEvent(eventId, size);
     }
 
     @Override
-    public Map<Long, Long> getCommentsNumberForEvents(List<Long> eventIds) {
+    @GetMapping(ADMIN_API_PREFIX)
+    @ResponseStatus(HttpStatus.OK)
+    public Map<Long, Long> getCommentsNumberForEvents(@RequestParam List<Long> eventIds) {
         return commentService.getCommentsNumberForEvents(eventIds);
     }
 }

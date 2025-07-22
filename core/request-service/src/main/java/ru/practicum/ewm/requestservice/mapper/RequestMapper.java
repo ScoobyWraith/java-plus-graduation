@@ -1,7 +1,7 @@
 package ru.practicum.ewm.requestservice.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.practicum.ewm.requestservice.dto.ParticipationRequestDto;
+import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
 import ru.practicum.ewm.requestservice.model.Request;
 
 @Component

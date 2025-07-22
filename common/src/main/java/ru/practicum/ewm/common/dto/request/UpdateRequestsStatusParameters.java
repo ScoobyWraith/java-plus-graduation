@@ -1,10 +1,9 @@
-package ru.practicum.ewm.events.dto.parameters;
+package ru.practicum.ewm.common.dto.request;
 
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
-import ru.practicum.ewm.events.dto.EventRequestStatusUpdateRequest;
 
 @Builder(toBuilder = true)
 @Getter
