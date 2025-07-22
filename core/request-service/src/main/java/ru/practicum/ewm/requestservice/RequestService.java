@@ -8,6 +8,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @SpringBootApplication
 public class RequestService {
     public static void main(String[] args) {
-        SpringApplication.run(RequestService.class);
+        SpringApplication.run(RequestService.class, args);
     }
 }
