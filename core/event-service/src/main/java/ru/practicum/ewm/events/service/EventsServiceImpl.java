@@ -2,6 +2,7 @@ package ru.practicum.ewm.events.service;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -141,7 +142,18 @@ public class EventsServiceImpl implements EventsService {
         Long eventId = updateParams.getEventId();
         Event event = getEventWithCheck(eventId);
         checkUserRights(userId, event);
-        return requestClient.updateRequestsForEvent(updateParams);
+
+        try {
+            return requestClient.updateRequestsForEvent(updateParams);
+        } catch (FeignException e) {
+            if (e.status() == 409) {
+                throw new DataIntegrityViolationException(String.format(
+                        "Event id=%d is full filled for requests.", eventId
+                ));
+            }
+
+            throw e;
+        }
     }
 
     @Override
