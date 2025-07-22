@@ -4,9 +4,9 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import ru.practicum.ewm.common.dto.event.EventFullDto;
-import ru.practicum.ewm.common.exception.DataIntegrityViolationException;
 import ru.practicum.ewm.common.dto.event.EventPublishState;
 import ru.practicum.ewm.common.dto.request.RequestStatus;
+import ru.practicum.ewm.common.exception.DataIntegrityViolationException;
 import ru.practicum.ewm.requestservice.repository.RequestRepository;
 
 @AllArgsConstructor

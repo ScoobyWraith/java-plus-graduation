@@ -1,9 +1,9 @@
 package ru.practicum.ewm.commentservice.mapper;
 
 import ru.practicum.ewm.commentservice.dto.CommentDto;
-import ru.practicum.ewm.common.dto.comment.CommentShortDto;
 import ru.practicum.ewm.commentservice.dto.NewCommentDto;
 import ru.practicum.ewm.commentservice.model.Comment;
+import ru.practicum.ewm.common.dto.comment.CommentShortDto;
 
 public class CommentMapper {
     public static Comment fromNewCommentDto(NewCommentDto newCommentDto) {

@@ -13,21 +13,21 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateResult;
+import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
 import ru.practicum.ewm.common.dto.request.RequestShortDto;
 import ru.practicum.ewm.common.dto.request.UpdateRequestsStatusParameters;
 import ru.practicum.ewm.common.interaction.RequestClient;
-import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
 import ru.practicum.ewm.requestservice.service.RequestService;
 
 import java.util.List;
 import java.util.Map;
 
+import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUESTS;
 import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUEST_BASE_PATCH_PATH;
 import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUEST_BASE_PATH;
 import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUEST_ID;
 import static ru.practicum.ewm.requestservice.constants.RequestConstants.USERS;
 import static ru.practicum.ewm.requestservice.constants.RequestConstants.USER_ID;
-import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUESTS;
 
 @Slf4j
 @RestController

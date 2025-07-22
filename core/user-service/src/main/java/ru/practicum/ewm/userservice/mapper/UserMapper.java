@@ -1,9 +1,9 @@
 package ru.practicum.ewm.userservice.mapper;
 
 import org.springframework.stereotype.Component;
+import ru.practicum.ewm.common.dto.user.UserShortDto;
 import ru.practicum.ewm.userservice.dto.NewUserRequestDto;
 import ru.practicum.ewm.userservice.dto.UserDto;
-import ru.practicum.ewm.common.dto.user.UserShortDto;
 import ru.practicum.ewm.userservice.model.User;
 
 @Component

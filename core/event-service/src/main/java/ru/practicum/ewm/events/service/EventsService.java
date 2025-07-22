@@ -2,8 +2,10 @@ package ru.practicum.ewm.events.service;
 
 import ru.practicum.ewm.common.dto.comment.CommentShortDto;
 import ru.practicum.ewm.common.dto.event.EventFullDto;
-import ru.practicum.ewm.events.dto.EventFullDtoWithComments;
 import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateResult;
+import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
+import ru.practicum.ewm.common.dto.request.UpdateRequestsStatusParameters;
+import ru.practicum.ewm.events.dto.EventFullDtoWithComments;
 import ru.practicum.ewm.events.dto.EventShortDto;
 import ru.practicum.ewm.events.dto.NewEventDto;
 import ru.practicum.ewm.events.dto.UpdateEventAdminRequest;
@@ -12,8 +14,6 @@ import ru.practicum.ewm.events.dto.parameters.GetAllCommentsParameters;
 import ru.practicum.ewm.events.dto.parameters.SearchEventsParameters;
 import ru.practicum.ewm.events.dto.parameters.SearchPublicEventsParameters;
 import ru.practicum.ewm.events.dto.parameters.UpdateEventParameters;
-import ru.practicum.ewm.common.dto.request.UpdateRequestsStatusParameters;
-import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
 
 import java.util.List;
 import java.util.Map;

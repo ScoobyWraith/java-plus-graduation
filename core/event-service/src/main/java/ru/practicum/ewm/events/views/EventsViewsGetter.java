@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.practicum.dto.StatViewDto;
 import ru.practicum.ewm.client.StatClient;
-import ru.practicum.ewm.events.constants.EventsConstants;
 import ru.practicum.ewm.common.util.Util;
+import ru.practicum.ewm.events.constants.EventsConstants;
 
 import java.time.LocalDateTime;
 import java.util.List;

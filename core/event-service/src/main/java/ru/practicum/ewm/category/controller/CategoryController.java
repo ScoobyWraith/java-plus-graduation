@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.ewm.common.dto.event.CategoryDto;
 import ru.practicum.ewm.category.dto.CategoryParams;
 import ru.practicum.ewm.category.dto.NewCategoryDto;
 import ru.practicum.ewm.category.service.CategoryService;
+import ru.practicum.ewm.common.dto.event.CategoryDto;
 
 import java.util.List;
 
