@@ -22,7 +22,6 @@ import ru.practicum.ewm.common.interaction.RequestClient;
 import ru.practicum.ewm.common.interaction.UserClient;
 import ru.practicum.ewm.common.dto.event.EventFullDto;
 import ru.practicum.ewm.events.dto.EventFullDtoWithComments;
-import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.events.dto.EventShortDto;
 import ru.practicum.ewm.common.dto.event.LocationDto;
@@ -40,7 +39,6 @@ import ru.practicum.ewm.common.dto.request.UpdateRequestsStatusParameters;
 import ru.practicum.ewm.events.enums.AdminEventAction;
 import ru.practicum.ewm.common.dto.event.EventPublishState;
 import ru.practicum.ewm.events.enums.SortingEvents;
-import ru.practicum.ewm.common.dto.request.UserUpdateRequestAction;
 import ru.practicum.ewm.events.mapper.EventMapper;
 import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.events.model.QEvent;
@@ -49,7 +47,6 @@ import ru.practicum.ewm.events.views.EventsViewsGetter;
 import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
 
 
-import ru.practicum.ewm.common.dto.request.RequestStatus;
 import ru.practicum.ewm.common.util.Util;
 
 import java.time.LocalDateTime;
@@ -57,7 +54,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 @Service
@@ -243,7 +242,7 @@ public class EventsServiceImpl implements EventsService {
         }
 
         if (searchParams.getOnlyAvailable() != null) {
-            List<Long> ids = eventsRepository.getAvailableEventIdsByParticipantLimit();
+            List<Long> ids = getAvailableEventIdsByParticipantLimit();
             conditions.add(event.id.in(ids));
         }
 
@@ -396,8 +395,10 @@ public class EventsServiceImpl implements EventsService {
 
     @Override
     public Map<Long, Long> getConfirmedRequestsMap(List<Long> eventIds) {
-        return eventsRepository.getConfirmedRequestsForEvents(eventIds).stream()
-                .collect(Collectors.toMap(List::getFirst, List::getLast));
+        Map<Long, Long> confirmed = requestClient.getConfirmedRequestsForEvents(eventIds);
+
+        return eventIds.stream()
+                .collect(Collectors.toMap(Function.identity(), id -> confirmed.getOrDefault(id, 0L)));
     }
 
     private Map<Long, Long> getCommentsNumberMap(List<Long> eventIds) {
@@ -508,5 +509,26 @@ public class EventsServiceImpl implements EventsService {
                     return EventMapper.toEventShortDto(mappingEventParameters);
                 })
                 .toList();
+    }
+
+    private List<Long> getAvailableEventIdsByParticipantLimit() {
+        List<Long> result = eventsRepository.getEventIdsWithZeroParticipantLimit();
+        List<Event> eventsWithNonZeroLimit = eventsRepository.getEventsWithNonZeroParticipantLimit();
+
+        if (!eventsWithNonZeroLimit.isEmpty()) {
+            List<Long> ids = eventsWithNonZeroLimit.stream()
+                    .map(Event::getId)
+                    .toList();
+            Map<Long, Long> confirmed = getConfirmedRequestsMap(ids);
+
+            result = Stream.concat(
+                    result.stream(),
+                    eventsWithNonZeroLimit.stream()
+                            .filter(event -> confirmed.get(event.getId()) < event.getParticipantLimit())
+                            .map(Event::getId)
+            ).toList();
+        }
+
+        return result;
     }
 }

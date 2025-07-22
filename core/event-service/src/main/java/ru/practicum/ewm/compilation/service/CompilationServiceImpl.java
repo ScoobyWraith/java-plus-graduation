@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.category.mapper.CategoryMapper;
 import ru.practicum.ewm.common.dto.user.GetUserShortRequest;
 import ru.practicum.ewm.common.dto.user.UserShortDto;
+import ru.practicum.ewm.common.interaction.RequestClient;
 import ru.practicum.ewm.common.interaction.UserClient;
 import ru.practicum.ewm.compilation.dto.CompilationDto;
 import ru.practicum.ewm.compilation.dto.CompilationParams;
@@ -29,6 +30,7 @@ import ru.practicum.ewm.events.views.EventsViewsGetter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +43,7 @@ public class CompilationServiceImpl implements CompilationService {
     private final EventsViewsGetter eventsViewsGetter;
 
     private final UserClient userClient;
+    private final RequestClient requestClient;
 
     @Override
     public List<CompilationDto> getCompilations(CompilationParams compilationParams) {
@@ -145,8 +148,10 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     private Map<Long, Long> getConfirmedRequestsMap(List<Long> eventIds) {
-        return eventsRepository.getConfirmedRequestsForEvents(eventIds).stream()
-                .collect(Collectors.toMap(List::getFirst, List::getLast));
+        Map<Long, Long> confirmed = requestClient.getConfirmedRequestsForEvents(eventIds);
+
+        return eventIds.stream()
+                .collect(Collectors.toMap(Function.identity(), id -> confirmed.getOrDefault(id, 0L)));
     }
 
     private List<EventShortDto> createEventShortDtoList(List<Event> events) {

@@ -21,6 +21,7 @@ import ru.practicum.ewm.common.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -127,5 +128,11 @@ public class RequestServiceImpl implements RequestService {
 
         requestRepository.saveAll(requests);
         return result;
+    }
+
+    @Override
+    public Map<Long, Long> getConfirmedRequestsForEvents(List<Long> eventIds) {
+        return requestRepository.getConfirmedRequestsForEvents(eventIds).stream()
+                .collect(Collectors.toMap(List::getFirst, List::getLast));
     }
 }

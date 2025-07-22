@@ -107,23 +107,24 @@ public class CommentController implements CommentClient {
     }
 
     @Override
-    @GetMapping(ADMIN_API_PREFIX)
+    @GetMapping(ADMIN_API_PREFIX + "/events/{eventId}")
     @ResponseStatus(HttpStatus.OK)
-    public List<CommentShortDto> findPageableCommentsForEvent(@RequestParam long eventId,
+    public List<CommentShortDto> findPageableCommentsForEvent(@PathVariable("eventId") long eventId,
                                                               @RequestParam int from,
                                                               @RequestParam int size) {
         return commentService.findPageableCommentsForEvent(eventId, from, size);
     }
 
     @Override
-    @GetMapping(ADMIN_API_PREFIX)
+    @GetMapping(ADMIN_API_PREFIX + "/events/{eventId}/first-comments")
     @ResponseStatus(HttpStatus.OK)
-    public List<CommentShortDto> findFirstCommentsForEvent(@RequestParam long eventId, @RequestParam long size) {
+    public List<CommentShortDto> findFirstCommentsForEvent(@PathVariable("eventId") long eventId,
+                                                           @RequestParam long size) {
         return commentService.findFirstCommentsForEvent(eventId, size);
     }
 
     @Override
-    @GetMapping(ADMIN_API_PREFIX)
+    @GetMapping(ADMIN_API_PREFIX + "/events")
     @ResponseStatus(HttpStatus.OK)
     public Map<Long, Long> getCommentsNumberForEvents(@RequestParam List<Long> eventIds) {
         return commentService.getCommentsNumberForEvents(eventIds);

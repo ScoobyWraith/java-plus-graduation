@@ -20,6 +20,7 @@ import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
 import ru.practicum.ewm.requestservice.service.RequestService;
 
 import java.util.List;
+import java.util.Map;
 
 import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUEST_BASE_PATCH_PATH;
 import static ru.practicum.ewm.requestservice.constants.RequestConstants.REQUEST_BASE_PATH;
@@ -65,8 +66,8 @@ public final class RequestController implements RequestClient {
     }
 
     @Override
-    @GetMapping(REQUESTS)
-    public List<ParticipationRequestDto> getRequestsForEvent(@RequestParam long eventId) {
+    @GetMapping(REQUESTS + "/event/{eventId}")
+    public List<ParticipationRequestDto> getRequestsForEvent(@PathVariable("eventId") long eventId) {
         return requestService.getRequestsForEvent(eventId);
     }
 
@@ -74,5 +75,11 @@ public final class RequestController implements RequestClient {
     @PostMapping(REQUESTS)
     public EventRequestStatusUpdateResult updateRequestsForEvent(@RequestBody UpdateRequestsStatusParameters updateParams) {
         return requestService.updateRequestsForEvent(updateParams);
+    }
+
+    @Override
+    @GetMapping(REQUESTS + "/event/confirmed-quantity")
+    public Map<Long, Long> getConfirmedRequestsForEvents(@RequestParam List<Long> eventIds) {
+        return requestService.getConfirmedRequestsForEvents(eventIds);
     }
 }

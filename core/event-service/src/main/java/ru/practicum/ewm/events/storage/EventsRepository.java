@@ -17,19 +17,14 @@ public interface EventsRepository extends JpaRepository<Event, Long>, QuerydslPr
     @Query(nativeQuery = true, value = """
        SELECT e.id
        FROM events e
-       LEFT JOIN requests r ON r.event_id = e.id
-       GROUP BY e.id
-       HAVING e.participant_limit = 0
-            OR SUM(CASE WHEN r.id IS NOT NULL AND r.status = 'CONFIRMED' THEN 1 ELSE 0 END) < e.participant_limit
+       WHERE e.participant_limit = 0
        """)
-    List<Long> getAvailableEventIdsByParticipantLimit();
+    List<Long> getEventIdsWithZeroParticipantLimit();
 
     @Query(nativeQuery = true, value = """
-       SELECT e.id, SUM(CASE WHEN r.id IS NOT NULL AND r.status = 'CONFIRMED' THEN 1 ELSE 0 END)
+       SELECT *
        FROM events e
-       LEFT JOIN requests r ON r.event_id = e.id
-       WHERE e.id IN (?1)
-       GROUP BY e.id
+       WHERE e.participant_limit > 0
        """)
-    List<List<Long>> getConfirmedRequestsForEvents(List<Long> eventIds);
+    List<Event> getEventsWithNonZeroParticipantLimit();
 }

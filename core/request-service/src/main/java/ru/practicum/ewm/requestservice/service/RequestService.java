@@ -1,11 +1,13 @@
 package ru.practicum.ewm.requestservice.service;
 
+import org.springframework.web.bind.annotation.RequestParam;
 import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.common.dto.request.RequestShortDto;
 import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
 import ru.practicum.ewm.common.dto.request.UpdateRequestsStatusParameters;
 
 import java.util.List;
+import java.util.Map;
 
 public interface RequestService {
 
@@ -20,4 +22,6 @@ public interface RequestService {
     List<ParticipationRequestDto> getRequestsForEvent(long eventId);
 
     EventRequestStatusUpdateResult updateRequestsForEvent(UpdateRequestsStatusParameters updateParams);
+
+    Map<Long, Long> getConfirmedRequestsForEvents(@RequestParam List<Long> eventIds);
 }

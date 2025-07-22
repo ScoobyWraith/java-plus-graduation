@@ -238,14 +238,14 @@ public class EventsController implements EventClient {
     // endregion
 
     @Override
-    @GetMapping(EventsConstants.PUBLIC_API_PREFIX)
+    @GetMapping(EventsConstants.PUBLIC_API_PREFIX + "/{eventId}/full-dto")
     @ResponseStatus(HttpStatus.OK)
-    public EventFullDto getFullEventDtoById(@RequestParam long eventId) {
+    public EventFullDto getFullEventDtoById(@PathVariable("eventId") long eventId) {
         return eventsService.getFullEventDtoById(eventId);
     }
 
     @Override
-    @GetMapping(EventsConstants.PUBLIC_API_PREFIX)
+    @GetMapping(EventsConstants.PUBLIC_API_PREFIX + "/confirmed-requests")
     @ResponseStatus(HttpStatus.OK)
     public Map<Long, Long> getConfirmedRequestsMap(List<Long> eventIds) {
         return eventsService.getConfirmedRequestsMap(eventIds);
