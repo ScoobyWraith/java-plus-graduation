@@ -11,7 +11,32 @@ spring:
             - Path=/hit/**
             - Path=/stats/**
 
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/admin/users/**
+
+        - id: request-service
+          uri: lb://request-service
+          predicates:
+            - Path=/users/{userId}/requests/**
+
+        - id: comment-service
+          uri: lb://comment-service
+          predicates:
+            - Path=/users/**
+            - Path=/admin/comments/**
+
         - id: main-service
-          uri: lb://main-service
+          uri: lb://event-service
           predicates:
             - Path=/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    gateway:
+      enabled: true

@@ -1,6 +1,27 @@
 # Приложение "ExploreWithMe"
 Позволяет пользователям делиться информацией об интересных событиях и находить компанию для участия в них
 
+Приложение состоит из основного сервиса и сервера статистики.
+
+Основной сервис представляет собой 4 микросервиса. Настройки каждого микросервиса располагаются в общей директории infra/config-server/src/main/resources/config/core в соответствующих подпапках.
+Сервисы:
+* user-service - отвечает за работу с пользователями. Конфигурация: /user-service
+* comment-service - отвечает на работу с комментариями к событиям (дополнительная функциональность). Конфигурация: /config-service
+* event-service - отвечает за работу с мероприятиями: события, категории, подборки. Конфигурация: /event-service
+* request-service - отвечает за работу с заявками на участие в событиях. Конфигурация: /request-service
+
+Между собой микросервисы взаимодействуют посредством Feign-клиентов — инструмента экосистемы Spring Cloud.
+
+Инфраструктура приложения построена с использованием стека spring-cloud в виде:
+* Spring Cloud Config - сервис внешней конфигурации. Расположение: infra/config-server
+* Spring Cloud Eureka - система обнаружения сервисов. Расположение: infra/discovery-server
+* Spring Cloud Gateway - реализация паттерна API-Gateway. Расположение: infra/gateway-server
+
+[Спецификация основного сервиса](https://raw.githubusercontent.com/yandex-praktikum/java-explore-with-me/main/ewm-main-service-spec.json)
+
+[Спецификация сервера статистики](https://raw.githubusercontent.com/yandex-praktikum/java-explore-with-me/main/ewm-stats-service-spec.json)
+
+
 ## Дополнительная функциональность - комментарии к событиям
 Возможность оставлять комментарии к событиям и модерировать их.
 
