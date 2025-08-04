@@ -1,7 +1,6 @@
 package ru.practicum.ewm.client;
 
 import com.google.protobuf.Timestamp;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
@@ -13,10 +12,9 @@ import java.time.Instant;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class CollectorClient {
     @GrpcClient("collector")
-    private final UserActionControllerGrpc.UserActionControllerBlockingStub client;
+    private UserActionControllerGrpc.UserActionControllerBlockingStub client;
 
     public void viewEvent(long userId, long eventId) {
         UserActionProto request = makeRequestProto(userId, eventId, ActionTypeProto.ACTION_VIEW);

@@ -1,6 +1,5 @@
 package ru.practicum.ewm.client;
 
-import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.stats.proto.messages.InteractionsCountRequestProto;
@@ -17,10 +16,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 @Service
-@RequiredArgsConstructor
 public class AnalyzerClient {
     @GrpcClient("analyzer")
-    private final RecommendationsControllerGrpc.RecommendationsControllerBlockingStub client;
+    private RecommendationsControllerGrpc.RecommendationsControllerBlockingStub client;
 
     public Stream<RecommendedEventProto> getSimilarEvents(long eventId, long userId, int maxResults) {
         SimilarEventsRequestProto request = SimilarEventsRequestProto.newBuilder()
