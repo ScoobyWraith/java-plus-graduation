@@ -1,0 +1,72 @@
+package ru.practicum.ewm.stats.analyzer.service;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import ru.practicum.ewm.stats.analyzer.model.EventsSimilarity;
+import ru.practicum.ewm.stats.analyzer.model.UserAction;
+import ru.practicum.ewm.stats.analyzer.storage.EventsSimilarityRepository;
+import ru.practicum.ewm.stats.analyzer.storage.UserActionsRepository;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class RecommendationsService {
+    private final EventsSimilarityRepository eventsSimilarityRepository;
+    private final UserActionsRepository userActionsRepository;
+
+    public Map<Long, Double> getRecommendations(long userId, long maxResults) {
+        Map<Long, Double> result = new HashMap<>();
+        List<Long> lastInteractedEventIds = userActionsRepository
+                .getLastInteractedEventIds(userId, maxResults);
+
+        if (lastInteractedEventIds.isEmpty()) {
+            return result;
+        }
+
+        List<UserAction> allUserActionsWithEvents = userActionsRepository
+                .getAllUserActionsWithEvents(userId);
+        Map<Long, Double> userInteractionWeightsForEvents = new HashMap<>();
+        List<Long> allInteractedEventIds = new ArrayList<>();
+
+        for (UserAction action : allUserActionsWithEvents) {
+            userInteractionWeightsForEvents.put(action.getEventId(), action.getWeight());
+            allInteractedEventIds.add(action.getEventId());
+        }
+
+        List<Long> similarNotInteractedEventIds = eventsSimilarityRepository
+                .findSimilarNotInteractedEvents(lastInteractedEventIds, maxResults)
+                .stream()
+                .map(se -> lastInteractedEventIds.contains(se.getEventAId()) ? se.getEventBId() : se.getEventAId())
+                .toList();
+
+        for (long eventId : similarNotInteractedEventIds) {
+            Map<Long, EventsSimilarity> similarInteractedEvents = eventsSimilarityRepository.
+                    findInteractedSimilarEvents(eventId, allInteractedEventIds, maxResults)
+                    .stream()
+                    .collect(
+                            Collectors.toMap(
+                                    es -> es.getEventAId() == eventId ? es.getEventBId() : es.getEventAId(),
+                                    Function.identity()
+                            )
+                    );
+            double sumOfWeights = 0;
+            double sumOfSimilarity = 0;
+
+            for (long interactedEventId : similarInteractedEvents.keySet()) {
+                double similarity = similarInteractedEvents.get(interactedEventId).getScore();
+                sumOfWeights += similarity * userInteractionWeightsForEvents.get(interactedEventId);
+                sumOfSimilarity += similarity;
+            }
+
+            result.put(eventId, sumOfWeights / sumOfSimilarity);
+        }
+
+        return result;
+    }
+}

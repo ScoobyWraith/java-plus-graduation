@@ -11,12 +11,15 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.category.mapper.CategoryMapper;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.category.storage.CategoryRepository;
+import ru.practicum.ewm.client.AnalyzerClient;
 import ru.practicum.ewm.common.dto.comment.CommentShortDto;
 import ru.practicum.ewm.common.dto.event.EventFullDto;
 import ru.practicum.ewm.common.dto.event.EventPublishState;
 import ru.practicum.ewm.common.dto.event.LocationDto;
 import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
+import ru.practicum.ewm.common.dto.request.RequestShortDto;
+import ru.practicum.ewm.common.dto.request.RequestStatus;
 import ru.practicum.ewm.common.dto.request.UpdateRequestsStatusParameters;
 import ru.practicum.ewm.common.dto.user.GetUserShortRequest;
 import ru.practicum.ewm.common.dto.user.UserShortDto;
@@ -46,7 +49,8 @@ import ru.practicum.ewm.events.mapper.EventMapper;
 import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.events.model.QEvent;
 import ru.practicum.ewm.events.storage.EventsRepository;
-import ru.practicum.ewm.events.views.EventsViewsGetter;
+import ru.practicum.ewm.events.views.EventsRatingGetter;
+import ru.practicum.ewm.stats.proto.messages.RecommendedEventProto;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -65,11 +69,13 @@ public class EventsServiceImpl implements EventsService {
     private final EventsRepository eventsRepository;
     private final CategoryRepository categoryRepository;
 
-    private final EventsViewsGetter eventsViewsGetter;
+    private final EventsRatingGetter eventsRatingGetter;
 
     private final CommentClient commentClient;
     private final UserClient userClient;
     private final RequestClient requestClient;
+
+    private final AnalyzerClient analyzerClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -279,12 +285,12 @@ public class EventsServiceImpl implements EventsService {
         List<Long> resultEventIds = StreamSupport.stream(resultEvents.spliterator(), false)
                 .map(Event::getId)
                 .toList();
-        Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(resultEventIds);
+        Map<Long, Double> eventsRaingMap = eventsRatingGetter.getEventsRatingMap(resultEventIds);
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(resultEventIds);
         Comparator<Event> sorting = Comparator.comparing(Event::getEventDate);
 
         if (searchParams.getSort() == SortingEvents.VIEWS) {
-            sorting = (ev1, ev2) -> Long.compare(eventsViewsMap.get(ev2.getId()), eventsViewsMap.get(ev1.getId()));
+            sorting = (ev1, ev2) -> Double.compare(eventsRaingMap.get(ev2.getId()), eventsRaingMap.get(ev1.getId()));
         } else if (searchParams.getSort() == SortingEvents.COMMENTS) {
             Map<Long, Long> commentsMap = getCommentsNumberMap(resultEventIds);
             sorting = (ev1, ev2) -> Long.compare(commentsMap.get(ev2.getId()), commentsMap.get(ev1.getId()));
@@ -294,7 +300,7 @@ public class EventsServiceImpl implements EventsService {
                 .sorted(sorting)
                 .skip(searchParams.getFrom())
                 .limit(searchParams.getSize())
-                .map(ev -> createEventFullDto(ev, eventsViewsMap.get(ev.getId()), confirmedRequestsMap.get(ev.getId())))
+                .map(ev -> createEventFullDto(ev, eventsRaingMap.get(ev.getId()), confirmedRequestsMap.get(ev.getId())))
                 .toList();
     }
 
@@ -411,13 +417,40 @@ public class EventsServiceImpl implements EventsService {
                 .collect(Collectors.toMap(Function.identity(), id -> confirmed.getOrDefault(id, 0L)));
     }
 
+    @Override
+    public List<EventFullDto> getRecommendations(long userId, int size) {
+        Map<Long, Double> recommendations = analyzerClient.getRecommendationsForUser(userId, size)
+                .collect(Collectors.toMap(RecommendedEventProto::getEventId, RecommendedEventProto::getScore));
+        List<Long> resultEventIds = recommendations.keySet()
+                .stream()
+                .toList();
+        List<Event> resultEvents = eventsRepository.findAllById(resultEventIds);
+        Map<Long, Double> eventsRaingMap = eventsRatingGetter.getEventsRatingMap(resultEventIds);
+        Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(resultEventIds);
+
+        return resultEvents.stream()
+                .sorted((ev1, ev2) -> Double.compare(recommendations.get(ev2.getId()), recommendations.get(ev1.getId())))
+                .map(ev -> createEventFullDto(ev, eventsRaingMap.get(ev.getId()), confirmedRequestsMap.get(ev.getId())))
+                .toList();
+    }
+
+    @Override
+    public void likeEvent(long userId, long eventId) {
+        RequestShortDto request = requestClient.findByRequesterIdAndEventId(userId, eventId);
+
+        if (request == null || !request.getStatus().equals(RequestStatus.CONFIRMED)) {
+            throw new ValidationException("You cannot like event because " +
+                    "you did not leave a request to participate or your request was rejected.");
+        }
+    }
+
     private Map<Long, Long> getCommentsNumberMap(List<Long> eventIds) {
         return commentClient.getCommentsNumberForEvents(eventIds);
     }
 
     private EventFullDto createEventFullDto(Event event) {
         long id = event.getId();
-        Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(List.of(id));
+        Map<Long, Double> eventsRatingMap = eventsRatingGetter.getEventsRatingMap(List.of(id));
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(List.of(id));
         Map<Long, UserShortDto> userShortsMap = userClient
                 .getUsersShort(new GetUserShortRequest(List.of(event.getInitiatorId())));
@@ -427,14 +460,14 @@ public class EventsServiceImpl implements EventsService {
                 .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
                 .initiator(userShortsMap.get(event.getInitiatorId()))
                 .confirmedRequests(confirmedRequestsMap.get(id))
-                .views(eventsViewsMap.get(id))
+                .rating(eventsRatingMap.get(id))
                 .build();
         return EventMapper.toEventFullDto(eventFullDtoParams);
     }
 
     private EventFullDtoWithComments createEventFullDtoWithComments(Event event) {
         long id = event.getId();
-        Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(List.of(id));
+        Map<Long, Double> eventsRatingMap = eventsRatingGetter.getEventsRatingMap(List.of(id));
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(List.of(id));
         List<CommentShortDto> commentsShort = commentClient.findFirstCommentsForEvent(id, 5L);
         Map<Long, UserShortDto> userShortsMap = userClient
@@ -445,13 +478,13 @@ public class EventsServiceImpl implements EventsService {
                 .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
                 .initiator(userShortsMap.get(event.getInitiatorId()))
                 .confirmedRequests(confirmedRequestsMap.get(id))
-                .views(eventsViewsMap.get(id))
+                .rating(eventsRatingMap.get(id))
                 .comments(commentsShort)
                 .build();
         return EventMapper.toEventEventFullDtoWithComments(eventFullDtoParams);
     }
 
-    private EventFullDto createEventFullDto(Event event, long views, long confirmedRequests) {
+    private EventFullDto createEventFullDto(Event event, double rating, long confirmedRequests) {
         Map<Long, UserShortDto> userShortsMap = userClient
                 .getUsersShort(new GetUserShortRequest(List.of(event.getInitiatorId())));
         MappingEventParameters eventFullDtoParams = MappingEventParameters.builder()
@@ -459,7 +492,7 @@ public class EventsServiceImpl implements EventsService {
                 .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
                 .initiator(userShortsMap.get(event.getInitiatorId()))
                 .confirmedRequests(confirmedRequests)
-                .views(views)
+                .rating(rating)
                 .build();
         return EventMapper.toEventFullDto(eventFullDtoParams);
     }
@@ -473,7 +506,7 @@ public class EventsServiceImpl implements EventsService {
             userIds.add(event.getInitiatorId());
         });
 
-        Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(ids);
+        Map<Long, Double> eventsRatingMap = eventsRatingGetter.getEventsRatingMap(ids);
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(ids);
         Map<Long, UserShortDto> userShortsMap = userClient
                 .getUsersShort(new GetUserShortRequest(userIds));
@@ -485,7 +518,7 @@ public class EventsServiceImpl implements EventsService {
                             .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
                             .initiator(userShortsMap.get(event.getInitiatorId()))
                             .confirmedRequests(confirmedRequestsMap.get(event.getId()))
-                            .views(eventsViewsMap.get(event.getId()))
+                            .rating(eventsRatingMap.get(event.getId()))
                             .build();
                     return EventMapper.toEventFullDto(eventFullDtoParams);
                 })
@@ -501,7 +534,7 @@ public class EventsServiceImpl implements EventsService {
             userIds.add(event.getInitiatorId());
         });
 
-        Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(ids);
+        Map<Long, Double> eventsRatingMap = eventsRatingGetter.getEventsRatingMap(ids);
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(ids);
         Map<Long, UserShortDto> userShortsMap = userClient
                 .getUsersShort(new GetUserShortRequest(userIds));
@@ -513,7 +546,7 @@ public class EventsServiceImpl implements EventsService {
                             .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
                             .initiator(userShortsMap.get(event.getInitiatorId()))
                             .confirmedRequests(confirmedRequestsMap.get(event.getId()))
-                            .views(eventsViewsMap.get(event.getId()))
+                            .rating(eventsRatingMap.get(event.getId()))
                             .build();
 
                     return EventMapper.toEventShortDto(mappingEventParameters);
