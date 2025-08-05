@@ -6,7 +6,6 @@ import stats.message.InteractionsCountRequestProto;
 import stats.message.RecommendedEventProto;
 import stats.message.SimilarEventsRequestProto;
 import stats.message.UserPredictionsRequestProto;
-import stats.service.analyzer.RecommendationsControllerGrpc;
 
 import java.util.Iterator;
 import java.util.List;
@@ -18,7 +17,10 @@ import java.util.stream.StreamSupport;
 @Service
 public class AnalyzerClient {
     @GrpcClient("analyzer")
-    private RecommendationsControllerGrpc.RecommendationsControllerBlockingStub client;
+    private stats.service.analyzer.RecommendationsControllerGrpc.RecommendationsControllerBlockingStub analyzerClient;
+
+    @GrpcClient("analyzer")
+    private stats.service.dashboard.RecommendationsControllerGrpc.RecommendationsControllerBlockingStub dashboardClient;
 
     public Stream<RecommendedEventProto> getSimilarEvents(long eventId, long userId, int maxResults) {
         SimilarEventsRequestProto request = SimilarEventsRequestProto.newBuilder()
@@ -27,7 +29,7 @@ public class AnalyzerClient {
                 .setMaxResults(maxResults)
                 .build();
 
-        Iterator<RecommendedEventProto> iterator = client.getSimilarEvents(request);
+        Iterator<RecommendedEventProto> iterator = analyzerClient.getSimilarEvents(request);
         return asStream(iterator);
     }
 
@@ -37,7 +39,7 @@ public class AnalyzerClient {
                 .setMaxResults(maxResults)
                 .build();
 
-        Iterator<RecommendedEventProto> iterator = client.getRecommendationsForUser(request);
+        Iterator<RecommendedEventProto> iterator = analyzerClient.getRecommendationsForUser(request);
         return asStream(iterator);
     }
 
@@ -46,7 +48,7 @@ public class AnalyzerClient {
                 .addAllEventId(eventIds)
                 .build();
 
-        Iterator<RecommendedEventProto> iterator = client.getInteractionsCount(request);
+        Iterator<RecommendedEventProto> iterator = dashboardClient.getInteractionsCount(request);
         return asStream(iterator);
     }
 
