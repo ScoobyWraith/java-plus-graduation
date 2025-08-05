@@ -1,4 +1,4 @@
-package ru.practicum.ewm.stats.collector;
+package stats.service.collector;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
