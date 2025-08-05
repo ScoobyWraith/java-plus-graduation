@@ -9,7 +9,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.LongDeserializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.practicum.ewm.stats.analyzer.service.UserActionsHandler;
@@ -36,7 +36,7 @@ public class UserActionConsumer {
     private int messagesQuantityToCommit;
 
     @Value("${kafka.consumers.user-actions.name}")
-    private int consumerName;
+    private String consumerName;
 
     @Value("${kafka.topics.user-actions}")
     private String topic;
@@ -45,7 +45,7 @@ public class UserActionConsumer {
     private String kafkaServer;
 
     public void start() {
-        KafkaConsumer<String, UserActionAvro> consumer = getConsumer();
+        KafkaConsumer<Long, UserActionAvro> consumer = getConsumer();
 
         try {
             consumer.subscribe(List.of(topic));
@@ -53,10 +53,10 @@ public class UserActionConsumer {
 
             // Цикл обработки событий
             while (true) {
-                ConsumerRecords<String, UserActionAvro> records = consumer.poll(consumeAttemptTimeout);
+                ConsumerRecords<Long, UserActionAvro> records = consumer.poll(consumeAttemptTimeout);
                 int count = 0;
 
-                for (ConsumerRecord<String, UserActionAvro> record : records) {
+                for (ConsumerRecord<Long, UserActionAvro> record : records) {
                     // обрабатываем очередную запись
                     handleRecord(record);
                     // фиксируем оффсеты обработанных записей, если нужно
@@ -81,20 +81,20 @@ public class UserActionConsumer {
         }
     }
 
-    private KafkaConsumer<String, UserActionAvro> getConsumer() {
+    private KafkaConsumer<Long, UserActionAvro> getConsumer() {
         Properties config = new Properties();
         config.put(ConsumerConfig.CLIENT_ID_CONFIG, consumerName);
         config.put(ConsumerConfig.GROUP_ID_CONFIG, consumerName);
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, UserActionDeserializer.class.getName());
         config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         return new KafkaConsumer<>(config);
     }
 
-    private void manageOffsets(ConsumerRecord<String, UserActionAvro> record,
+    private void manageOffsets(ConsumerRecord<Long, UserActionAvro> record,
                                int count,
-                               KafkaConsumer<String, UserActionAvro> consumer) {
+                               KafkaConsumer<Long, UserActionAvro> consumer) {
         // обновляем текущий оффсет для топика-партиции
         currentOffsets.put(
                 new TopicPartition(record.topic(), record.partition()),
@@ -110,7 +110,7 @@ public class UserActionConsumer {
         }
     }
 
-    private void handleRecord(ConsumerRecord<String, UserActionAvro> record) {
+    private void handleRecord(ConsumerRecord<Long, UserActionAvro> record) {
         log.info("топик = {}, партиция = {}, смещение = {}, значение: {}\n",
                 record.topic(), record.partition(), record.offset(), record.value());
         userActionsHandler.handle(record.value());

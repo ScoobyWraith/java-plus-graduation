@@ -9,6 +9,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.practicum.ewm.stats.analyzer.service.EventsSimilarityHandler;
@@ -35,7 +36,7 @@ public class EventsSimilarityConsumer implements Runnable {
     private int messagesQuantityToCommit;
 
     @Value("${kafka.consumers.events-similarity.name}")
-    private int consumerName;
+    private String consumerName;
 
     @Value("${kafka.topics.events-similarity}")
     private String topic;
@@ -44,7 +45,7 @@ public class EventsSimilarityConsumer implements Runnable {
     private String kafkaServer;
 
     public void start() {
-        KafkaConsumer<Void, EventSimilarityAvro> consumer = getConsumer();
+        KafkaConsumer<String, EventSimilarityAvro> consumer = getConsumer();
 
         try {
             consumer.subscribe(List.of(topic));
@@ -52,10 +53,10 @@ public class EventsSimilarityConsumer implements Runnable {
 
             // Цикл обработки событий
             while (true) {
-                ConsumerRecords<Void, EventSimilarityAvro> records = consumer.poll(consumeAttemptTimeout);
+                ConsumerRecords<String, EventSimilarityAvro> records = consumer.poll(consumeAttemptTimeout);
                 int count = 0;
 
-                for (ConsumerRecord<Void, EventSimilarityAvro> record : records) {
+                for (ConsumerRecord<String, EventSimilarityAvro> record : records) {
                     // обрабатываем очередную запись
                     handleRecord(record);
                     // фиксируем оффсеты обработанных записей, если нужно
@@ -80,20 +81,20 @@ public class EventsSimilarityConsumer implements Runnable {
         }
     }
 
-    private KafkaConsumer<Void, EventSimilarityAvro> getConsumer() {
+    private KafkaConsumer<String, EventSimilarityAvro> getConsumer() {
         Properties config = new Properties();
         config.put(ConsumerConfig.CLIENT_ID_CONFIG, consumerName);
         config.put(ConsumerConfig.GROUP_ID_CONFIG, consumerName);
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, Void.class.getName());
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, EventSimilarityDeserializer.class.getName());
         config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         return new KafkaConsumer<>(config);
     }
 
-    private void manageOffsets(ConsumerRecord<Void, EventSimilarityAvro> record,
+    private void manageOffsets(ConsumerRecord<String, EventSimilarityAvro> record,
                                int count,
-                               KafkaConsumer<Void, EventSimilarityAvro> consumer) {
+                               KafkaConsumer<String, EventSimilarityAvro> consumer) {
         // обновляем текущий оффсет для топика-партиции
         currentOffsets.put(
                 new TopicPartition(record.topic(), record.partition()),
@@ -109,7 +110,7 @@ public class EventsSimilarityConsumer implements Runnable {
         }
     }
 
-    private void handleRecord(ConsumerRecord<Void, EventSimilarityAvro> record) {
+    private void handleRecord(ConsumerRecord<String, EventSimilarityAvro> record) {
         log.info("топик = {}, партиция = {}, смещение = {}, значение: {}\n",
                 record.topic(), record.partition(), record.offset(), record.value());
         eventsSimilarityHandler.handle(record.value());

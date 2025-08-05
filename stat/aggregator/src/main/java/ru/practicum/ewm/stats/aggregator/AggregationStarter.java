@@ -13,8 +13,8 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.VoidSerializer;
+import org.apache.kafka.common.serialization.LongDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.practicum.ewm.stats.aggregator.service.SimilarityService;
@@ -52,8 +52,8 @@ public class AggregationStarter {
     private String kafkaServer;
 
     public void start() {
-        KafkaConsumer<String, UserActionAvro> consumer = getConsumer();
-        KafkaProducer<Void, SpecificRecordBase> producer = getProducer();
+        KafkaConsumer<Long, UserActionAvro> consumer = getConsumer();
+        KafkaProducer<String, SpecificRecordBase> producer = getProducer();
 
         try {
             consumer.subscribe(List.of(userActionsTopic));
@@ -61,10 +61,10 @@ public class AggregationStarter {
 
             // Цикл обработки событий
             while (true) {
-                ConsumerRecords<String, UserActionAvro> records = consumer.poll(consumeAttemptTimeout);
+                ConsumerRecords<Long, UserActionAvro> records = consumer.poll(consumeAttemptTimeout);
                 int count = 0;
 
-                for (ConsumerRecord<String, UserActionAvro> record : records) {
+                for (ConsumerRecord<Long, UserActionAvro> record : records) {
                     // обрабатываем очередную запись
                     handleRecord(record, producer);
                     // фиксируем оффсеты обработанных записей, если нужно
@@ -95,28 +95,28 @@ public class AggregationStarter {
         }
     }
 
-    private KafkaConsumer<String, UserActionAvro> getConsumer() {
+    private KafkaConsumer<Long, UserActionAvro> getConsumer() {
         Properties config = new Properties();
         config.put(ConsumerConfig.CLIENT_ID_CONFIG, "aggregator-consumer");
         config.put(ConsumerConfig.GROUP_ID_CONFIG, "aggregator-consumer");
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, UserActionDeserializer.class.getName());
         config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         return new KafkaConsumer<>(config);
     }
 
-    private KafkaProducer<Void, SpecificRecordBase> getProducer() {
+    private KafkaProducer<String, SpecificRecordBase> getProducer() {
         Properties config = new Properties();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
-        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, VoidSerializer.class.getName());
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, GeneralAvroSerializer.class.getName());
         return new KafkaProducer<>(config);
     }
 
-    private void manageOffsets(ConsumerRecord<String, UserActionAvro> record,
+    private void manageOffsets(ConsumerRecord<Long, UserActionAvro> record,
                                int count,
-                               KafkaConsumer<String, UserActionAvro> consumer) {
+                               KafkaConsumer<Long, UserActionAvro> consumer) {
         // обновляем текущий оффсет для топика-партиции
         currentOffsets.put(
                 new TopicPartition(record.topic(), record.partition()),
@@ -132,8 +132,8 @@ public class AggregationStarter {
         }
     }
 
-    private void handleRecord(ConsumerRecord<String, UserActionAvro> record,
-                              KafkaProducer<Void, SpecificRecordBase> producer) throws InterruptedException {
+    private void handleRecord(ConsumerRecord<Long, UserActionAvro> record,
+                              KafkaProducer<String, SpecificRecordBase> producer) throws InterruptedException {
         log.info("топик = {}, партиция = {}, смещение = {}, значение: {}\n",
                 record.topic(), record.partition(), record.offset(), record.value());
 
