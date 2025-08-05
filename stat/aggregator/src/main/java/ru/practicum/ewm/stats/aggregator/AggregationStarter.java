@@ -45,7 +45,7 @@ public class AggregationStarter {
     @Value("${kafka.topics.user-actions}")
     private String userActionsTopic;
 
-    @Value("${kafka.events-similarity}")
+    @Value("${kafka.topics.events-similarity}")
     private String eventsSimilarityTopic;
 
     @Value("${kafka.server}")
