@@ -50,7 +50,7 @@ import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.events.model.QEvent;
 import ru.practicum.ewm.events.storage.EventsRepository;
 import ru.practicum.ewm.events.views.EventsRatingGetter;
-import ru.practicum.ewm.stats.proto.messages.RecommendedEventProto;
+import stats.message.RecommendedEventProto;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

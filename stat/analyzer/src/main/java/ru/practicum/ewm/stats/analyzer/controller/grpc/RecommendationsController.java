@@ -8,11 +8,11 @@ import net.devh.boot.grpc.server.service.GrpcService;
 import ru.practicum.ewm.stats.analyzer.service.InteractionsService;
 import ru.practicum.ewm.stats.analyzer.service.RecommendationsService;
 import ru.practicum.ewm.stats.analyzer.service.SimilarEventsService;
-import ru.practicum.ewm.stats.proto.messages.InteractionsCountRequestProto;
-import ru.practicum.ewm.stats.proto.messages.RecommendedEventProto;
-import ru.practicum.ewm.stats.proto.messages.SimilarEventsRequestProto;
-import ru.practicum.ewm.stats.proto.messages.UserPredictionsRequestProto;
-import ru.practicum.ewm.stats.proto.services.RecommendationsControllerGrpc;
+import stats.message.InteractionsCountRequestProto;
+import stats.message.RecommendedEventProto;
+import stats.message.SimilarEventsRequestProto;
+import stats.message.UserPredictionsRequestProto;
+import stats.service.analyzer.RecommendationsControllerGrpc;
 
 import java.util.Map;
 

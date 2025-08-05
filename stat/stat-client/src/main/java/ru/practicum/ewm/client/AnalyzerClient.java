@@ -2,11 +2,11 @@ package ru.practicum.ewm.client;
 
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
-import ru.practicum.ewm.stats.proto.messages.InteractionsCountRequestProto;
-import ru.practicum.ewm.stats.proto.messages.RecommendedEventProto;
-import ru.practicum.ewm.stats.proto.messages.SimilarEventsRequestProto;
-import ru.practicum.ewm.stats.proto.messages.UserPredictionsRequestProto;
-import ru.practicum.ewm.stats.proto.services.RecommendationsControllerGrpc;
+import stats.message.InteractionsCountRequestProto;
+import stats.message.RecommendedEventProto;
+import stats.message.SimilarEventsRequestProto;
+import stats.message.UserPredictionsRequestProto;
+import stats.service.analyzer.RecommendationsControllerGrpc;
 
 import java.util.Iterator;
 import java.util.List;

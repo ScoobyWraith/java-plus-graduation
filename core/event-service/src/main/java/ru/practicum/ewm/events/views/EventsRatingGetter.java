@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.practicum.ewm.client.AnalyzerClient;
-import ru.practicum.ewm.stats.proto.messages.RecommendedEventProto;
+import stats.message.RecommendedEventProto;
 
 import java.util.List;
 import java.util.Map;
