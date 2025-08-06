@@ -5,15 +5,18 @@ import ru.practicum.ewm.stats.analyzer.model.UserAction;
 import ru.practicum.ewm.stats.avro.UserActionAvro;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Component
 public class UserActionMapper {
     public UserAction fromUserActionAvro(UserActionAvro userActionAvro, double weight) {
+        LocalDateTime ts = LocalDateTime.ofInstant(userActionAvro.getTimestamp(), ZoneOffset.UTC);
+
         return UserAction.builder()
                 .eventId(userActionAvro.getEventId())
                 .userId(userActionAvro.getUserId())
                 .weight(weight)
-                .timestamp(LocalDateTime.from(userActionAvro.getTimestamp()))
+                .timestamp(ts)
                 .build();
     }
 }

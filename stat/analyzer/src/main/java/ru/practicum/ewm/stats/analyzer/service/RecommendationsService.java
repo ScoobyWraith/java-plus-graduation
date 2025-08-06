@@ -1,6 +1,7 @@
 package ru.practicum.ewm.stats.analyzer.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.stats.analyzer.model.EventsSimilarity;
 import ru.practicum.ewm.stats.analyzer.model.UserAction;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RecommendationsService {
@@ -21,9 +23,12 @@ public class RecommendationsService {
     private final UserActionsRepository userActionsRepository;
 
     public Map<Long, Double> getRecommendations(long userId, long maxResults) {
+        log.info("Запрос на рекомендации для юзера {}.", userId);
         Map<Long, Double> result = new HashMap<>();
         List<Long> lastInteractedEventIds = userActionsRepository
                 .getLastInteractedEventIds(userId, maxResults);
+
+        log.info("Крайние события, с которыми взаимодействовал юзер: {}.", lastInteractedEventIds);
 
         if (lastInteractedEventIds.isEmpty()) {
             return result;

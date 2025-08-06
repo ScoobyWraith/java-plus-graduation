@@ -1,6 +1,7 @@
 package ru.practicum.ewm.stats.aggregator.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.stats.aggregator.storage.SimilarityStorage;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SimilarityServiceImpl implements SimilarityService {
@@ -28,6 +30,8 @@ public class SimilarityServiceImpl implements SimilarityService {
 
     @Override
     public List<EventSimilarityAvro> getSimilarityEvents(UserActionAvro userAction) {
+        log.info("Запрос на пересчет схожести. Поступили данные: {}.", userAction);
+
         List<EventSimilarityAvro> result = new ArrayList<>();
 
         long eventId = userAction.getEventId();
@@ -36,6 +40,8 @@ public class SimilarityServiceImpl implements SimilarityService {
         double newWeight = getWeightByAction(userAction.getActionType());
         double currentWeight = similarityStorage.getEventWeight(eventId, userId);
 
+        log.info("Текущий вес: {}. Новый вес: {}.", currentWeight, newWeight);
+
         // Ничего не делать, если вес не стал больше от действия юзера
         if (newWeight <= currentWeight) {
             return result;
@@ -43,6 +49,8 @@ public class SimilarityServiceImpl implements SimilarityService {
 
         double currentWeightsSum = similarityStorage.getEventWeightsSums(eventId);
         double newWeightsSum = currentWeightsSum + (newWeight - currentWeight);
+
+        log.info("Текущая сумма весов: {}. Новая сумма весов: {}.", currentWeightsSum, newWeightsSum);
 
         // Обновить weights И сумму weights
         similarityStorage.setEventWeight(eventId, userId, newWeight);
@@ -66,6 +74,16 @@ public class SimilarityServiceImpl implements SimilarityService {
             double currentSimilarity = calcSimilarity(currentMinSums, currentWeightsSum, anotherWeightsSum);
             double newSimilarity = calcSimilarity(newMinSums, newWeightsSum, anotherWeightsSum);
 
+            log.info("События {} и {}." +
+                    "\n  Текущая сумма минимальных весов: {}. Новая сумма минимальных весов: {}." +
+                    "\n  Текущая сумма весов: {}. Новая сумма весов: {}." +
+                    "\n  Текущий коэффициент: {}. Новый коэффициент: {}.",
+                    eventId, anotherEventId,
+                    currentMinSums, newMinSums,
+                    currentWeightsSum, newWeightsSum,
+                    currentSimilarity, newSimilarity
+            );
+
             long first = Math.min(eventId, anotherEventId);
             long second = Math.max(eventId, anotherEventId);
 
@@ -81,6 +99,7 @@ public class SimilarityServiceImpl implements SimilarityService {
             }
 
             similarityStorage.setMinWeightsSums(first, second, newMinSums);
+            log.info("Произошла запись в хранилище first, second, newMinSums: {}, {}, {}.", first, second, newMinSums);
         }
 
         return result;

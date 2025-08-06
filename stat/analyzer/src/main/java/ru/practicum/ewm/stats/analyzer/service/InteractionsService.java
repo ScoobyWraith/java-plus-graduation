@@ -1,7 +1,6 @@
 package ru.practicum.ewm.stats.analyzer.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.stats.analyzer.storage.UserActionsRepository;
 
@@ -17,7 +16,10 @@ public class InteractionsService {
     public Map<Long, Double> getEventInteractionsSums(List<Long> eventIds) {
         Map<Long, Double> weights = userActionsRepository.getEventInteractionsSums(eventIds)
                 .stream()
-                .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
+                .collect(Collectors.toMap(
+                        el -> Long.parseLong(el.get("event_id").toString()),
+                        el -> Double.parseDouble(el.get("sum").toString())
+                ));
 
         eventIds
                 .forEach(id -> weights.putIfAbsent(id, 0.0));

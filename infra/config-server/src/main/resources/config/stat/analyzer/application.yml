@@ -48,5 +48,5 @@ kafka:
 similarity:
   weights:
     like: 1
-    register: 0.7
-    view: 0.3
+    register: 0.8
+    view: 0.4

@@ -24,7 +24,7 @@ public class UserActionController extends UserActionControllerGrpc.UserActionCon
     @Override
     public void collectUserAction(UserActionProto request, StreamObserver<Empty> responseObserver) {
         try {
-            log.info("Получены данные от события {}", request);
+            log.info("Произошло событие. Данные: {}.", request);
             UserActionAvro userActionAvro = UserActionAvro.newBuilder()
                     .setUserId(request.getUserId())
                     .setEventId(request.getEventId())
@@ -34,7 +34,7 @@ public class UserActionController extends UserActionControllerGrpc.UserActionCon
 
             kafkaClient.sendData(request.getUserId(), userActionAvro, kafkaClient.getUserActionsTopic());
             log.info(
-                    "Отправлено в кафка-топик {} под ключом {} сообщение {}.",
+                    "Данные перенаправлены в кафка-топик {} под ключом {}. Сообщение: {}.",
                     kafkaClient.getUserActionsTopic(), request.getUserId(), userActionAvro
             );
             responseObserver.onNext(Empty.getDefaultInstance());
