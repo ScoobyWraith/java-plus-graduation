@@ -42,6 +42,12 @@ public class SimilarityServiceImpl implements SimilarityService {
 
         log.info("Текущий вес: {}. Новый вес: {}.", currentWeight, newWeight);
 
+        // Ничего не делать, если вес не стал больше от действия юзера
+        if (newWeight <= currentWeight) {
+            log.info("ТВес не стал больше. Ничего не делаем.");
+            return result;
+        }
+
         double currentWeightsSum = similarityStorage.getEventWeightsSums(eventId);
         double newWeightsSum = currentWeightsSum + (newWeight - currentWeight);
 
@@ -50,11 +56,6 @@ public class SimilarityServiceImpl implements SimilarityService {
         // Обновить weights И сумму weights
         similarityStorage.setEventWeight(eventId, userId, newWeight);
         similarityStorage.setEventWeightsSums(eventId, newWeightsSum);
-
-        // Ничего не делать, если вес не стал больше от действия юзера
-        if (newWeight <= currentWeight) {
-            return result;
-        }
 
         Set<Long> allEventIds = similarityStorage.getAllEventIds();
 
@@ -110,6 +111,7 @@ public class SimilarityServiceImpl implements SimilarityService {
                         .build();
 
                 log.info("Схожесть изменилась. Добавлены данные о схожести: {}.", data);
+                log.info("Для схожести использовались данные: {}, {}, {}", newMinSums, Math.sqrt(newWeightsSum), Math.sqrt(anotherWeightsSum));
 
                 result.add(data);
             }
