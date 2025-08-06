@@ -23,7 +23,7 @@ public class RecommendationsService {
     private final UserActionsRepository userActionsRepository;
 
     public Map<Long, Double> getRecommendations(long userId, long maxResults) {
-        log.info("Запрос на рекомендации для юзера {}.", userId);
+        log.info("Запрос на {} рекомендаций для юзера {}.", maxResults, userId);
         Map<Long, Double> result = new HashMap<>();
         List<Long> lastInteractedEventIds = userActionsRepository
                 .getLastInteractedEventIds(userId, maxResults);
@@ -44,13 +44,19 @@ public class RecommendationsService {
             allInteractedEventIds.add(action.getEventId());
         }
 
+        log.info("Веса для всех событий, с которыми взаимодействовал юзер: {}.", userInteractionWeightsForEvents);
+
         List<Long> similarNotInteractedEventIds = eventsSimilarityRepository
                 .findSimilarNotInteractedEvents(lastInteractedEventIds, maxResults)
                 .stream()
                 .map(se -> lastInteractedEventIds.contains(se.getEventAId()) ? se.getEventBId() : se.getEventAId())
                 .toList();
 
+        log.info("События, с которыми НЕ взаимодействовал юзер: {}.", similarNotInteractedEventIds);
+
         for (long eventId : similarNotInteractedEventIds) {
+            log.info("Подсчет предполагаемой оценки для события {}.", eventId);
+
             Map<Long, EventsSimilarity> similarInteractedEvents = eventsSimilarityRepository.
                     findInteractedSimilarEvents(eventId, allInteractedEventIds, maxResults)
                     .stream()
@@ -60,6 +66,9 @@ public class RecommendationsService {
                                     Function.identity()
                             )
                     );
+
+            log.info("Мапа схожести событий с рассматриваемым: {}.", similarInteractedEvents);
+
             double sumOfWeights = 0;
             double sumOfSimilarity = 0;
 
@@ -68,6 +77,8 @@ public class RecommendationsService {
                 sumOfWeights += similarity * userInteractionWeightsForEvents.get(interactedEventId);
                 sumOfSimilarity += similarity;
             }
+
+            log.info("Предполагаемая оценка для события {}: {}.", eventId, sumOfWeights / sumOfSimilarity);
 
             result.put(eventId, sumOfWeights / sumOfSimilarity);
         }

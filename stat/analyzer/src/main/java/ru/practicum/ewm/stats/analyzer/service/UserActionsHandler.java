@@ -1,6 +1,7 @@
 package ru.practicum.ewm.stats.analyzer.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.stats.analyzer.mapper.UserActionMapper;
@@ -9,6 +10,7 @@ import ru.practicum.ewm.stats.analyzer.storage.UserActionsRepository;
 import ru.practicum.ewm.stats.avro.ActionTypeAvro;
 import ru.practicum.ewm.stats.avro.UserActionAvro;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserActionsHandler {
@@ -25,6 +27,8 @@ public class UserActionsHandler {
     private double viewWeight;
 
     public void handle(UserActionAvro record) {
+        log.info("Обработка события UserActions. Данные: {}.", record);
+
         double weight = getWeightByAction(record.getActionType());
         UserAction recordedAction = userActionMapper.fromUserActionAvro(record, weight);
 
@@ -34,6 +38,7 @@ public class UserActionsHandler {
 
         actionFromRepository.setWeight(recordedAction.getWeight());
         actionFromRepository.setTimestamp(recordedAction.getTimestamp());
+        log.info("Запись в хранилище: {}.", actionFromRepository);
         userActionsRepository.save(actionFromRepository);
     }
 

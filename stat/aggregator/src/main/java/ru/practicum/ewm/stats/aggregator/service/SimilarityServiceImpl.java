@@ -42,11 +42,6 @@ public class SimilarityServiceImpl implements SimilarityService {
 
         log.info("Текущий вес: {}. Новый вес: {}.", currentWeight, newWeight);
 
-        // Ничего не делать, если вес не стал больше от действия юзера
-        if (newWeight <= currentWeight) {
-            return result;
-        }
-
         double currentWeightsSum = similarityStorage.getEventWeightsSums(eventId);
         double newWeightsSum = currentWeightsSum + (newWeight - currentWeight);
 
@@ -56,6 +51,11 @@ public class SimilarityServiceImpl implements SimilarityService {
         similarityStorage.setEventWeight(eventId, userId, newWeight);
         similarityStorage.setEventWeightsSums(eventId, newWeightsSum);
 
+        // Ничего не делать, если вес не стал больше от действия юзера
+        if (newWeight <= currentWeight) {
+            return result;
+        }
+
         Set<Long> allEventIds = similarityStorage.getAllEventIds();
 
         for (long anotherEventId : allEventIds) {
@@ -63,43 +63,51 @@ public class SimilarityServiceImpl implements SimilarityService {
                 continue;
             }
 
+            log.info("Сравнение события {} с событием {}.", eventId, anotherEventId);
+
             double anotherEventWeight = similarityStorage.getEventWeight(anotherEventId, userId);
             double anotherWeightsSum = similarityStorage.getEventWeightsSums(anotherEventId);
+            log.info("Веса события {}: {}, сумма {}.", anotherEventId, anotherEventWeight, anotherWeightsSum);
 
             double currentMin = Math.min(currentWeight, anotherEventWeight);
             double newMin = Math.min(newWeight, anotherEventWeight);
+            log.info("Текущий минимум {}, новый {}.", currentMin, newMin);
+
             double currentMinSums = similarityStorage.getMinWeightsSums(eventId, anotherEventId);
             double newMinSums = currentMinSums + (newMin - currentMin);
+            log.info("Текущая сумма минимумов {}, новая {}.", currentMinSums, newMinSums);
 
-            double currentSimilarity = calcSimilarity(currentMinSums, currentWeightsSum, anotherWeightsSum);
-            double newSimilarity = calcSimilarity(newMinSums, newWeightsSum, anotherWeightsSum);
+            // Обновить сумму минимальных весов
+            similarityStorage.setMinWeightsSums(eventId, anotherEventId, newMinSums);
 
-            log.info("События {} и {}." +
-                    "\n  Текущая сумма минимальных весов: {}. Новая сумма минимальных весов: {}." +
-                    "\n  Текущая сумма весов: {}. Новая сумма весов: {}." +
-                    "\n  Текущий коэффициент: {}. Новый коэффициент: {}.",
-                    eventId, anotherEventId,
-                    currentMinSums, newMinSums,
-                    currentWeightsSum, newWeightsSum,
-                    currentSimilarity, newSimilarity
-            );
+            double currentSimilarity = 0;
+            double newSimilarity = 0;
+
+            if (currentMinSums != 0 && currentWeightsSum != 0) {
+                currentSimilarity = calcSimilarity(currentMinSums, currentWeightsSum, anotherWeightsSum);
+            }
+
+            if (newMinSums != 0) {
+                newSimilarity = calcSimilarity(newMinSums, newWeightsSum, anotherWeightsSum);
+            }
+
+            log.info("Текущая схожесть событий {}, новая {}.", currentSimilarity, newSimilarity);
 
             long first = Math.min(eventId, anotherEventId);
             long second = Math.max(eventId, anotherEventId);
 
             if (newSimilarity != currentSimilarity) {
-                result.add(
-                        EventSimilarityAvro.newBuilder()
-                                .setEventA(first)
-                                .setEventB(second)
-                                .setScore(newSimilarity)
-                                .setTimestamp(userAction.getTimestamp())
-                        .build()
-                );
-            }
+                EventSimilarityAvro data = EventSimilarityAvro.newBuilder()
+                        .setEventA(first)
+                        .setEventB(second)
+                        .setScore(newSimilarity)
+                        .setTimestamp(userAction.getTimestamp())
+                        .build();
 
-            similarityStorage.setMinWeightsSums(first, second, newMinSums);
-            log.info("Произошла запись в хранилище first, second, newMinSums: {}, {}, {}.", first, second, newMinSums);
+                log.info("Схожесть изменилась. Добавлены данные о схожести: {}.", data);
+
+                result.add(data);
+            }
         }
 
         return result;
