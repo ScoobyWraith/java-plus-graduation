@@ -36,7 +36,7 @@ public class UserActionsHandler {
                 .findByEventIdAndUserId(recordedAction.getEventId(), recordedAction.getUserId())
                 .orElse(recordedAction);
 
-        actionFromRepository.setWeight(recordedAction.getWeight());
+        actionFromRepository.setWeight(Math.max(recordedAction.getWeight(), actionFromRepository.getWeight()));
         actionFromRepository.setTimestamp(recordedAction.getTimestamp());
         log.info("Запись в хранилище: {}.", actionFromRepository);
         userActionsRepository.save(actionFromRepository);

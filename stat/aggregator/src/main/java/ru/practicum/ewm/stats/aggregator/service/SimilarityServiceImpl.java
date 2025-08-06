@@ -69,7 +69,7 @@ public class SimilarityServiceImpl implements SimilarityService {
             double anotherWeightsSum = similarityStorage.getEventWeightsSums(anotherEventId);
             log.info("Веса события {}: {}, сумма {}.", anotherEventId, anotherEventWeight, anotherWeightsSum);
 
-            if (anotherEventId == 0) {
+            if (anotherEventWeight == 0) {
                 log.info("Пользователь не взаимодействовал с событием. Пересчет не требуется.");
                 continue;
             }
