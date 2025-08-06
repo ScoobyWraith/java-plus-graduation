@@ -63,11 +63,16 @@ public class SimilarityServiceImpl implements SimilarityService {
                 continue;
             }
 
-            log.info("Сравнение события {} с событием {}.", eventId, anotherEventId);
+            log.info("---Сравнение события {} с событием {}.", eventId, anotherEventId);
 
             double anotherEventWeight = similarityStorage.getEventWeight(anotherEventId, userId);
             double anotherWeightsSum = similarityStorage.getEventWeightsSums(anotherEventId);
             log.info("Веса события {}: {}, сумма {}.", anotherEventId, anotherEventWeight, anotherWeightsSum);
+
+            if (anotherEventId == 0) {
+                log.info("Пользователь не взаимодействовал с событием. Пересчет не требуется.");
+                continue;
+            }
 
             double currentMin = Math.min(currentWeight, anotherEventWeight);
             double newMin = Math.min(newWeight, anotherEventWeight);

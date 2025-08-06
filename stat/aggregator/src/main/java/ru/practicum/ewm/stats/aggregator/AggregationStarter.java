@@ -146,6 +146,7 @@ public class AggregationStarter {
 
         for (EventSimilarityAvro similarityEvent : similarityEvents) {
             try {
+                log.error("Отправка результата схожести: {}.", similarityEvent);
                 producer.send(new ProducerRecord<>(eventsSimilarityTopic, similarityEvent));
             } catch (Exception e) {
                 log.error("Ошибка отправки схожести событий {}", similarityEvent, e);
