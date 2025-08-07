@@ -2,21 +2,21 @@ package ru.practicum.ewm.events.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.dto.StatHitDto;
-import ru.practicum.ewm.client.StatClient;
+import ru.practicum.ewm.client.CollectorClient;
 import ru.practicum.ewm.common.dto.comment.CommentShortDto;
 import ru.practicum.ewm.common.dto.event.EventFullDto;
 import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateRequest;
@@ -24,7 +24,6 @@ import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
 import ru.practicum.ewm.common.dto.request.UpdateRequestsStatusParameters;
 import ru.practicum.ewm.common.interaction.EventClient;
-import ru.practicum.ewm.common.util.Util;
 import ru.practicum.ewm.events.constants.EventsConstants;
 import ru.practicum.ewm.events.dto.EventFullDtoWithComments;
 import ru.practicum.ewm.events.dto.EventShortDto;
@@ -51,22 +50,12 @@ import static ru.practicum.ewm.events.constants.EventsConstants.PUBLIC_API_PREFI
 import static ru.practicum.ewm.events.constants.EventsConstants.PUBLIC_API_PREFIX_USER_ID;
 import static ru.practicum.ewm.events.constants.EventsConstants.USER_ID;
 
+@RequiredArgsConstructor
 @RestController
 @Slf4j
 public class EventsController implements EventClient {
     private final EventsService eventsService;
-    private final StatClient statClient;
-    private final String applicationName;
-
-    @Autowired
-    public EventsController(EventsService eventsService,
-                            StatClient statClient,
-                            @Value("${spring.application.name}")
-                            String applicationName) {
-        this.eventsService = eventsService;
-        this.statClient = statClient;
-        this.applicationName = applicationName;
-    }
+    private final CollectorClient collectorClient;
 
     // region PRIVATE
     @GetMapping(EventsConstants.PRIVATE_API_PREFIX + PUBLIC_API_PREFIX_USER_ID)
@@ -208,17 +197,34 @@ public class EventsController implements EventClient {
                 .build();
         log.info("Request: search public events. Query={}", searchPublicEventsParameters);
         List<EventFullDto> result = eventsService.searchPublicEvents(searchPublicEventsParameters);
-        hitStat(request);
         return result;
     }
 
     @GetMapping(EventsConstants.PUBLIC_API_PREFIX + EVENT_ID_PATH)
     @ResponseStatus(HttpStatus.OK)
-    public EventFullDtoWithComments getPublicEventById(@PathVariable(EVENT_ID) Long eventId, HttpServletRequest request) {
+    public EventFullDtoWithComments getPublicEventById(@RequestHeader("X-EWM-USER-ID") long userId,
+                                                       @PathVariable(EVENT_ID) Long eventId,
+                                                       HttpServletRequest request) {
         log.info("Request: get public event with id={}", eventId);
         EventFullDtoWithComments result = eventsService.getPublicEventById(eventId);
-        hitStat(request);
+        collectorClient.viewEvent(userId, eventId);
         return result;
+    }
+
+    @GetMapping(EventsConstants.PUBLIC_API_PREFIX + EventsConstants.PUBLIC_API_PREFIX_RECOMMENDATIONS)
+    @ResponseStatus(HttpStatus.OK)
+    public List<EventFullDto> getRecommendations(@RequestHeader("X-EWM-USER-ID") long userId,
+                                                 @RequestParam(required = false, defaultValue = "10") Integer size) {
+        log.info("Request: get recommendation events for user {}", userId);
+        return eventsService.getRecommendations(userId, size);
+    }
+
+    @PutMapping(EventsConstants.PUBLIC_API_PREFIX + EVENT_ID_PATH + EventsConstants.EVENT_LIKE)
+    @ResponseStatus(HttpStatus.OK)
+    public void likeEvent(@RequestHeader("X-EWM-USER-ID") long userId, @PathVariable(EVENT_ID) Long eventId) {
+        log.info("Request: set like from user {} to event {}", userId, eventId);
+        eventsService.likeEvent(userId, eventId);
+        collectorClient.likeEvent(userId, eventId);
     }
 
     @GetMapping(PUBLIC_API_PREFIX_COMMENTS)
@@ -249,19 +255,5 @@ public class EventsController implements EventClient {
     @ResponseStatus(HttpStatus.OK)
     public Map<Long, Long> getConfirmedRequestsMap(List<Long> eventIds) {
         return eventsService.getConfirmedRequestsMap(eventIds);
-    }
-
-    private void hitStat(HttpServletRequest request) {
-        StatHitDto statHitDto = StatHitDto.builder()
-                .app(applicationName)
-                .uri(request.getRequestURI())
-                .ip(request.getRemoteAddr())
-                .timestamp(Util.getNowTruncatedToSeconds())
-                .build();
-        try {
-            statClient.hit(statHitDto);
-        } catch (Exception e) {
-            log.error("Error on hitting stats. Msg: {}, \nstackTrace: {}", e.getMessage(), e.getStackTrace());
-        }
     }
 }

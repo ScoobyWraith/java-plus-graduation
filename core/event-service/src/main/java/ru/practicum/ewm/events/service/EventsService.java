@@ -44,4 +44,8 @@ public interface EventsService {
     EventFullDto getFullEventDtoById(long eventId);
 
     Map<Long, Long> getConfirmedRequestsMap(List<Long> eventIds);
+
+    List<EventFullDto> getRecommendations(long userId, int size);
+
+    void likeEvent(long userId, long eventId);
 }

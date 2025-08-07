@@ -1,0 +1,41 @@
+spring:
+  main.banner-mode: OFF
+  jpa:
+    hibernate:
+      ddl-auto: update
+      format_sql: true
+      jdbc.time_zone: UTC
+  sql:
+    init:
+      mode: always
+
+  datasource:
+    driverClassName: "org.postgresql.Driver"
+    url: "jdbc:postgresql://localhost:5432/ewm-stats-analyzer"
+    username: "service"
+    password: "service"
+
+grpc:
+  server:
+    port: 0
+
+kafka:
+  server: "localhost:9092"
+  consumers:
+    user-actions:
+      name: "analyzer-consumer-user-actions"
+      commit-every-messages: 10
+      attempt-timeout-ms: 150
+    events-similarity:
+      name: "analyzer-consumer-events-similarity"
+      commit-every-messages: 10
+      attempt-timeout-ms: 400
+  topics:
+    user-actions: "stats.user-actions.v1"
+    events-similarity: "stats.events-similarity.v1"
+
+similarity:
+  weights:
+    like: 1
+    register: 0.8
+    view: 0.4

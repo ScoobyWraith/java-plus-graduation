@@ -1,0 +1,14 @@
+syntax = "proto3";
+package stats.service.dashboard;
+
+import "stats/message/interactions_count_request.proto";
+import "stats/message/recommended_event.proto";
+
+option java_multiple_files = true;
+option java_package = "stats.service.dashboard";
+
+
+service RecommendationsController {
+  rpc GetInteractionsCount(stats.message.InteractionsCountRequestProto)
+      returns (stream stats.message.RecommendedEventProto);
+}

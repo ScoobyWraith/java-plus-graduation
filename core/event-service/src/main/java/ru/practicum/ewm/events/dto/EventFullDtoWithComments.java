@@ -36,6 +36,6 @@ public class EventFullDtoWithComments {
     Boolean requestModeration;
     String title;
     EventPublishState state;
-    Long views;
+    Double rating;
     List<CommentShortDto> comments;
 }
