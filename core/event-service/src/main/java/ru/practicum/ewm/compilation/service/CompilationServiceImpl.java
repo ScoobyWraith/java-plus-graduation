@@ -25,7 +25,7 @@ import ru.practicum.ewm.events.dto.parameters.MappingEventParameters;
 import ru.practicum.ewm.events.mapper.EventMapper;
 import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.events.storage.EventsRepository;
-import ru.practicum.ewm.events.views.EventsViewsGetter;
+import ru.practicum.ewm.events.views.EventsRatingGetter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +40,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     private final CompilationRepository compilationRepository;
     private final EventsRepository eventsRepository;
-    private final EventsViewsGetter eventsViewsGetter;
+    private final EventsRatingGetter eventsRatingGetter;
 
     private final UserClient userClient;
     private final RequestClient requestClient;
@@ -167,7 +167,7 @@ public class CompilationServiceImpl implements CompilationService {
             userIds.add(event.getInitiatorId());
         });
 
-        Map<Long, Long> eventsViewsMap = eventsViewsGetter.getEventsViewsMap(eventIds);
+        Map<Long, Double> eventsRatingMap = eventsRatingGetter.getEventsRatingMap(eventIds);
         Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsMap(eventIds);
         Map<Long, UserShortDto> userShortsMap = userClient
                 .getUsersShort(new GetUserShortRequest(userIds));
@@ -179,7 +179,7 @@ public class CompilationServiceImpl implements CompilationService {
                             .categoryDto(CategoryMapper.toCategoryDto(event.getCategory()))
                             .initiator(userShortsMap.get(event.getInitiatorId()))
                             .confirmedRequests(confirmedRequestsMap.getOrDefault(event.getId(), 0L))
-                            .views(eventsViewsMap.getOrDefault(event.getId(), 0L))
+                            .rating(eventsRatingMap.getOrDefault(event.getId(), 0.0))
                             .build();
                     return EventMapper.toEventShortDto(mappingEventParameters);
                 })

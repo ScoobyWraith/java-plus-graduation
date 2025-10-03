@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import ru.practicum.ewm.client.CollectorClient;
 import ru.practicum.ewm.common.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.common.dto.request.ParticipationRequestDto;
 import ru.practicum.ewm.common.dto.request.RequestShortDto;
@@ -34,7 +35,7 @@ import static ru.practicum.ewm.requestservice.constants.RequestConstants.USER_ID
 @RequestMapping(USERS)
 @RequiredArgsConstructor
 public final class RequestController implements RequestClient {
-
+    private final CollectorClient collectorClient;
     private final RequestService requestService;
 
     @GetMapping(REQUEST_BASE_PATH)
@@ -47,7 +48,9 @@ public final class RequestController implements RequestClient {
     ParticipationRequestDto createUserRequest(@PathVariable(USER_ID) Long userId,
                                               @RequestParam Long eventId) {
         log.info("Creating request for user with ID: {} for event ID: {}", userId, eventId);
-        return requestService.createUserRequest(userId, eventId);
+        ParticipationRequestDto result = requestService.createUserRequest(userId, eventId);
+        collectorClient.registerEvent(userId, eventId);
+        return result;
     }
 
 
